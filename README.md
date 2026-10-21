@@ -1,0 +1,136 @@
+# Winkle Study
+
+NotionのStudy Logを読み取り、学習時間・教科の内訳・週の推移を振り返る個人用ダッシュボード。Notionへの書き込み・AI API・集計用DBはありません。
+
+## 起動
+
+Node.js 24、pnpm 11.25.0を使用します。Next.js 16.4.2 / React 19 / TypeScript / Tailwind CSS 4 / Recharts 3 / Notion公式SDK 5.27.1 / NextAuth 4.24.15。依存関係は`pnpm-lock.yaml`に固定しています。
+
+```sh
+corepack enable
+corepack prepare pnpm@11.25.0 --activate
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+- http://localhost:3000/ : 許可リストで保護された本番用入口。認証未設定時は設定待ち画面。
+- http://localhost:3000/demo : 認証不要の架空データ。実接続失敗時にここへ自動切り替えしません。
+- `pnpm build && pnpm start` : 本番モード。ビルド時の秘密情報は不要です。
+
+`npm`がないCodexのWindows環境では、同梱の`C:/Users/kobud/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback/pnpm.cmd`を`pnpm`の代わりに使えます。
+
+## 環境変数
+
+`.env.example`を`.env.local`へコピーし、ローカルエディターまたはホスティングのSecrets設定で入力します。トークンを会話・Git・NEXT_PUBLIC変数に貼らないでください。環境変数の変更後はアプリを再起動します。
+
+|変数|内容|
+|---|---|
+|`NOTION_TOKEN`|必要なStudy Logのみを共有した、読み取り専用インテグレーションのトークン|
+|`NOTION_DATA_SOURCE_ID`|省略時は確認済みのStudy Log。データベースIDとは別|
+|`NOTION_PROPERTY_IDS`|任意。プロパティIDを固定するJSON。下記参照|
+|`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`|Google OAuthウェブアプリの認証情報|
+|`NEXTAUTH_SECRET`|32バイト以上のランダムな秘密値。`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`等で生成し、秘密設定へ保存|
+|`NEXTAUTH_URL`|開発時`http://localhost:3000`、本番時は自分のHTTPSオリジン|
+|`ALLOWED_EMAILS`|本人のGoogleメール。カンマ区切り。空リストは全員拒否|
+|`CACHE_DIR`|本番必須。永続ストレージの絶対パス。開発時は`.cache/notion`|
+|`PLAYWRIGHT_CHANNEL`|ローカルのインストール済みChromeを使うなら`chrome`。CIは未設定でChromiumを使用|
+
+## Notion接続
+
+2026-10-22に、指定された入口ページ配下の**Study Log**をコネクターで読み取り確認しました。Tasksではありません。現在の記録は0件で、実記録による合計照合は未実施です。コネクターの認証はこのアプリへ引き継がれません。
+
+- Study Logデータベース: `3fda1dd3-1af8-8004-bae2-ede705a4b58f`
+- Study Logデータソース: `3fda1dd3-1af8-805d-a7f0-000b32970193`
+- 明示したNotion APIバージョン: **2026-03-11**
+
+Notionで内部インテグレーションを作成し、**Read contentのみ**を有効化します。Update/Insert等の書き込み権限は不要です。Study Logデータベースの「接続を追加」で、そのインテグレーションに必要なデータソースだけのアクセスを付与します。親ページ全体を共有してTasksなどへ権限を広げる必要はありません。トークンを`NOTION_TOKEN`へ保存します。既存の構造や記録を変更する処理はありません。
+
+|アプリ項目|確認した表示名|REST APIの型|扱い|
+|---|---|---|---|
+|title|学習内容|title|空なら「無題の記録」|
+|date|日付|date|作成日ではなく学習日。日付のみは移動しない|
+|subject|科目|select|空なら「未分類」|
+|duration|学習時間（分）|number|実績の分。計画時間は取得しない|
+|unit|単元|rich_text|任意の内容。プロパティの存在・型は検証|
+
+初回の直接API接続で実スキーマを取得し、表示名と型を検証してプロパティIDに解決します。以後は永続キャッシュのID対応を優先するため、表示名の変更に耐えます。Notionコネクターはすべての生プロパティIDを公開しないため、現時点で未取得のIDを捏造していません。
+
+対応を変更する場合は、`NOTION_PROPERTY_IDS`に実際のIDを設定します。例（下記は書式で、実在IDではありません）：
+
+```json
+{"title":"title-id","date":"date-id","subject":"subject-id","duration":"minutes-id","unit":"unit-id"}
+```
+
+IDはNotion公式のRetrieve a data sourceレスポンスで確認できます。未指定時の初回表示名・型は`src/lib/notion-schema.ts`の`FIELDS`で変更します。単位を変える場合は、まず原本の単位を確認して明示的に変換コードとテストを修正してください。型の不一致は接続エラーになり、勝手な推定をしません。
+
+100件ずつcursorをたどり、`request_status.type=incomplete`または10,000件上限を検出すると作成時刻の半開区間で再帰分割します。作成時刻は取得の分割にのみ使用し、集計には使いません。分割不能・cursor異常時は取得全体を失敗にし、不完全な合計を保存しません。必要な5プロパティだけを`filter_properties`で要求します。429/529と読み取りの一時5xxは最大3回再試行し、Retry-Afterを尊重します。60秒を超える待機が必要なら早期再試行せず失敗表示にします。
+
+## Googleログイン
+
+Google Cloud ConsoleでOAuth同意画面と**ウェブアプリケーション**のOAuthクライアントを用意し、本人をテストユーザーに追加します。リダイレクトURI：
+
+```text
+http://localhost:3000/api/auth/callback/google
+https://YOUR_HOST/api/auth/callback/google
+```
+
+Googleの検証済みメールを確認し、ログイン時と全データAPIの両方で`ALLOWED_EMAILS`を完全一致で検証します。JWTセッションは12時間。公開ページやビルド成果物へNotionの記録を埋め込みません。`GET /api/study`と`POST /api/study`は未認証で401。POSTは正規Origin必須、cross-site拒否、30秒に1回まで。NextAuthの認証ルートはライブラリのCSRF処理を使います。
+
+## 集計・画面
+
+- Asia/Tokyo、月曜始まり。週比較は月曜〜今日と前週の同じ曜日まで。前週0分では増加率なし。
+- 期間（今日・今週・今月・最大366日の任意期間）と教科でフィルター。上段カードは常に**今週**、下段の日別と教科は選択期間、週別推移は**直近8週間**。各カード・グラフに対象を明記。
+- 同じNotionページIDは最新編集の1件だけ採用。未入力/不正/負数の実績時間、不正/空白の日付、複数日へまたがり配分できない日付範囲は除外して件数表示。明示的な0分は有効。問題件数は全取得期間を対象とする。
+- 記録がない日は「未記録」。日別の表で確認可能。平均は記録日あたり。時間帯別分析は行わない。
+- 教科の色は固定。追加の教科は名前のハッシュで安定した色にする。グラフの数値は表・合計・割合でも確認可能。
+- デモには通常・未記録・同期エラー・不正データ警告の表示切り替えがあります。
+
+## 永続キャッシュとデプロイ
+
+このバージョンは**Node.js + 永続ローカルボリューム**に配置します。集計用DBは不要です。Sitesには既存公開先がなく、Cloudflare Workersの実行モデルはこのNode/ファイル永続方式と異なるため、既存アカウントへのデプロイは行っていません。Vercelなどの一時ファイルだけの環境へ、そのまま配置しないでください。サーバーレスに移すなら共有キャッシュ・分散ロック・頻度制限のストア実装を交換する必要があります。
+
+キャッシュは5分有効。プロセス間の同時取得はファイルロックで抑止します。ロックは10秒ごとにheartbeat、90秒途絶えたロックだけを回復します。原子的なファイル置換で、レコード・最終成功時刻・プロパティID対応・更新試行時刻を保存します。更新失敗時は前回成功データと時刻を表示し、初回取得失敗時は明確にエラー。秘密値はファイルに保存しません。キャッシュには個人の記録が入るので、アクセスをアプリ実行ユーザーに制限し、Gitや公開ディレクトリへ置かないでください。同時実行は同じローカルボリュームを共有する単一ホスト内に対応します。別ホストやNFS分散運用は対象外です。
+
+Dockerが利用できるホストで：
+
+```sh
+# .env.localをホスト側で設定済みにする
+docker compose up -d --build
+# 停止
+docker compose down
+```
+
+`compose.yaml`はloopbackの3000番だけにbindします。まずSSHトンネル等の非公開経路で確認し、本番は信頼するHTTPSリバースプロキシから接続します。`NEXTAUTH_URL`にHTTPSオリジンを設定し、Googleのcallback URIも一致させてください。TLSとホスティングの契約・課金は別途必要です。`study-cache`ボリュームを保持し、更新時に`docker compose down -v`を実行しないでください。イメージには`.env*`やローカルキャッシュを含めません。認証設定が欠けている状態は実データを提供しません。
+
+Dockerなしでも`pnpm build`後、`CACHE_DIR`に実行ユーザー専用の永続ディレクトリを指定して`pnpm start`で実行できます。ポートはファイアウォールやプロキシで限定してください。
+
+## 検証
+
+```sh
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+# 本番サーバーを別ターミナルで起動してから
+pnpm start
+# 別ターミナル。初回のみChromiumを導入
+pnpm exec playwright install chromium
+pnpm test:browser
+# インストール済みChromeを使う場合：PLAYWRIGHT_CHANNEL=chrome
+```
+
+ユニットテストは日付境界・月曜/年越し/閏日・期間・分/小数/欠損/重複・正規化・スキーマ変更・全ページ取得・上限分割・Retry-After・認証/Origin・永続キャッシュ/失敗時保持/頻度制限を検証します。PlaywrightはPC/スマホのデモ操作、横はみ出し、未認証GET/POST拒否を確認します。CIでも型・lint・ユニットテスト・本番ビルド・ブラウザテストを実行します。実トークン/Google資格情報を使うE2Eは別途本人の設定後に実行します。
+
+現地での実行結果と残作業は`VERIFICATION.md`を参照してください。復習リスト・Tasks・カレンダー・睡眠・スマホ連携は未対応です。
+
+## 参照した公式仕様
+
+- [Next.js installation](https://nextjs.org/docs/app/getting-started/installation)
+- [Notion Query a data source](https://developers.notion.com/reference/query-a-data-source)
+- [Notion API versioning](https://developers.notion.com/reference/versioning)
+- [Notion request limits](https://developers.notion.com/reference/request-limits)
+- [Google provider / verified email](https://next-auth.js.org/providers/google)
+
+## 構成
+
+`src/lib/study.ts`（集計）→`notion-schema.ts`（対応・正規化）→`notion.ts`（読取）→`store.ts`/`sync.ts`（永続化・同期）→`app/api/study`（認可）→`components/dashboard.tsx`（表示）。追加のデータ連携は独立したproviderとして追加できます。

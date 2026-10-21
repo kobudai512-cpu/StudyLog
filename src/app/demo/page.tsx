@@ -1,0 +1,5 @@
+import Dashboard from "@/components/dashboard";
+export const dynamic = "force-dynamic";
+export default function DemoPage() {
+  return <Dashboard mode="demo" authenticated={false} authReady={false} />;
+}
