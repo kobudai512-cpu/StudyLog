@@ -131,9 +131,12 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
       rangeError = (e as Error).message;
     }
   const summary = useMemo(
-    () => (today && !rangeError ? aggregate(records, range, subject) : null),
+    () =>
+      today && !rangeError
+        ? aggregate(records, { start: range.start, end: range.end }, subject)
+        : null,
     [records, range.start, range.end, subject, today, rangeError],
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const week = useMemo(
     () => (today ? weekComparison(records, today, subject) : null),
     [records, today, subject],
