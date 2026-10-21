@@ -9,15 +9,10 @@ import {
 } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import type { Snapshot } from "./study";
-import type { Bindings } from "./notion-schema";
-export type CacheState = {
-  snapshot?: Snapshot;
-  bindings?: Bindings;
-  lastAttempt?: number;
-  lastError?: string;
-};
-export class FileStore {
+import type { CacheLease, CacheState, CacheStore } from "./cache-types";
+import { RedisStore } from "./redis-store";
+export type { CacheState } from "./cache-types";
+export class FileStore implements CacheStore {
   constructor(readonly directory: string) {}
   async read(): Promise<CacheState> {
     try {
@@ -34,7 +29,7 @@ export class FileStore {
     await writeFile(temp, JSON.stringify(state), { mode: 0o600 });
     await rename(temp, join(this.directory, "state.json"));
   }
-  async lock(): Promise<null | (() => Promise<void>)> {
+  async lock(): Promise<CacheLease | null> {
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
     const path = join(this.directory, "sync.lock");
     try {
@@ -59,25 +54,35 @@ export class FileStore {
       void utimes(path, now, now).catch(() => {});
     }, 10000);
     timer.unref();
-    return async () => {
+    const release = async () => {
       clearInterval(timer);
       await rm(path, { recursive: true, force: true });
     };
+    return Object.assign(release, { write: this.write.bind(this) });
   }
 }
-export function configuredStore() {
-  if (process.env.NODE_ENV === "production" && !process.env.CACHE_DIR)
-    throw new Error("本番の永続キャッシュ（CACHE_DIR）が未設定です。");
+export function configuredStore(): CacheStore {
   const namespace = createHash("sha256")
     .update(
       [
         process.env.NOTION_DATA_SOURCE_ID,
         process.env.NOTION_TOKEN,
         process.env.NOTION_PROPERTY_IDS,
+        process.env.VERCEL_ENV,
       ].join(":"),
     )
     .digest("hex")
     .slice(0, 24);
+  const redisUrl =
+    process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const redisToken =
+    process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (redisUrl && redisToken)
+    return new RedisStore(redisUrl, redisToken, `winkle:${namespace}`);
+  if (redisUrl || redisToken || process.env.VERCEL === "1")
+    throw new Error("共有キャッシュのREST URLとトークンを設定してください。");
+  if (process.env.NODE_ENV === "production" && !process.env.CACHE_DIR)
+    throw new Error("本番の永続キャッシュ（CACHE_DIR）が未設定です。");
   // Runtime-only private storage; never trace its contents into a deployable bundle.
   return new FileStore(
     join(

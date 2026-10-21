@@ -1,5 +1,6 @@
 import type { StudyResponse } from "./study";
-import { configuredStore, type FileStore } from "./store";
+import { configuredStore } from "./store";
+import type { CacheStore } from "./cache-types";
 import { fetchNotion } from "./notion";
 export class SyncError extends Error {
   constructor(
@@ -12,7 +13,7 @@ export class SyncError extends Error {
 }
 export async function synchronize(
   force = false,
-  store: FileStore = configuredStore(),
+  store: CacheStore = configuredStore(),
   load = fetchNotion,
 ): Promise<StudyResponse> {
   let state = await store.read();
@@ -54,17 +55,17 @@ export async function synchronize(
       );
     }
     state.lastAttempt = Date.now();
-    await store.write(state);
+    await unlock.write(state);
     try {
       const result = await load(state.bindings);
       state = { ...result, lastAttempt: Date.now() };
-      await store.write(state);
+      await unlock.write(state);
       return respond(false);
     } catch {
       // Provider messages may include private request context; expose a fixed safe message.
       state.lastError =
         "Notionの同期に失敗しました。トークン・読み取り権限・プロパティ対応を確認してください。";
-      await store.write(state);
+      await unlock.write(state);
       return respond(true, state.lastError);
     }
   } finally {

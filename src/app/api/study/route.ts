@@ -3,6 +3,7 @@ import { sameOrigin } from "@/lib/auth-policy";
 import { SyncError, synchronize } from "@/lib/sync";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 300;
 function json(body: unknown, status = 200, retryAfter?: number) {
   return Response.json(body, {
     status,
@@ -21,7 +22,7 @@ async function run(force: boolean) {
         error:
           e instanceof SyncError
             ? e.message
-            : "接続または永続キャッシュの設定を確認してください。",
+            : "接続またはキャッシュの設定を確認してください。",
       },
       e instanceof SyncError ? e.status : 503,
       e instanceof SyncError ? e.retryAfter : undefined,

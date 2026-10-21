@@ -32,7 +32,8 @@ pnpm dev
 |`NEXTAUTH_SECRET`|32バイト以上のランダムな秘密値。`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`等で生成し、秘密設定へ保存|
 |`NEXTAUTH_URL`|開発時`http://localhost:3000`、本番時は自分のHTTPSオリジン|
 |`ALLOWED_EMAILS`|本人のGoogleメール。カンマ区切り。空リストは全員拒否|
-|`CACHE_DIR`|本番必須。永続ストレージの絶対パス。開発時は`.cache/notion`|
+|`CACHE_DIR`|Node/Docker配置時の永続ストレージの絶対パス。開発時は`.cache/notion`。VercelではRedisを使用|
+|`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`|Vercel用共有キャッシュのHTTPS REST URLと書込トークン。Marketplaceが設定する`KV_REST_API_URL` / `KV_REST_API_TOKEN`も使用可能|
 |`PLAYWRIGHT_CHANNEL`|ローカルのインストール済みChromeを使うなら`chrome`。CIは未設定でChromiumを使用|
 
 ## Notion接続
@@ -87,7 +88,20 @@ Googleの検証済みメールを確認し、ログイン時と全データAPI�
 
 ## 永続キャッシュとデプロイ
 
-このバージョンは**Node.js + 永続ローカルボリューム**に配置します。集計用DBは不要です。Sitesには既存公開先がなく、Cloudflare Workersの実行モデルはこのNode/ファイル永続方式と異なるため、既存アカウントへのデプロイは行っていません。Vercelなどの一時ファイルだけの環境へ、そのまま配置しないでください。サーバーレスに移すなら共有キャッシュ・分散ロック・頻度制限のストア実装を交換する必要があります。
+**Node.js + 永続ローカルボリューム**と、**Vercel + Redis共有キャッシュ**に対応します。Notionが原本で、集計用DBは追加しません。Redisは再取得を抑えるための7日保持のキャッシュと、同時取得・更新頻度の制御だけに使います。
+
+### Vercelへの配置
+
+GitHubの`kobudai512-cpu/StudyLog`をVercelへインポートします。フレームワークはNext.js、Node.jsは24、設定は`vercel.json`を使用します。
+
+1. Storage/MarketplaceでUpstash互換のRedisをプロジェクトへ接続。無料プラン等の条件を本人が確認し、有料プランは自動で有効化しません。
+2. サーバー側環境変数へ、Notion・Googleの資格情報と許可メール、本番用NEXTAUTH_SECRETを登録。RedisのREST URLと書込トークンも上表の名前で設定します。これらにNEXT_PUBLICプレフィックスを付けません。
+3. 本番ドメインのHTTPSオリジンを`NEXTAUTH_URL`へ設定し、Google OAuthクライアントに`https://本番ドメイン/api/auth/callback/google`を追加。
+4. 環境変数を保存した後、再デプロイ。未認証のデータAPIが401となり、本人のログイン後に同期できることを確認します。
+
+Vercel上でRedisが未設定なら実データの取得をエラーにし、ファイルやメモリーへ黙って切り替えません。Redis接続障害時も明確に失敗を表示します。キャッシュキーはデータソース/認証設定/production・preview環境ごとに分離します。60秒の所有権付きリースを15秒ごとに延長し、書き込みと所有権検証をLuaで原子的に実行します。期限切れのワーカーが新しい結果を上書きしたり、新しいロックを消したりしない設計です。
+
+以下の永続ファイル方式はローカル/Node/Docker用です。
 
 キャッシュは5分有効。プロセス間の同時取得はファイルロックで抑止します。ロックは10秒ごとにheartbeat、90秒途絶えたロックだけを回復します。原子的なファイル置換で、レコード・最終成功時刻・プロパティID対応・更新試行時刻を保存します。更新失敗時は前回成功データと時刻を表示し、初回取得失敗時は明確にエラー。秘密値はファイルに保存しません。キャッシュには個人の記録が入るので、アクセスをアプリ実行ユーザーに制限し、Gitや公開ディレクトリへ置かないでください。同時実行は同じローカルボリュームを共有する単一ホスト内に対応します。別ホストやNFS分散運用は対象外です。
 
