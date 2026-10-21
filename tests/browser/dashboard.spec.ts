@@ -1,4 +1,61 @@
 import { test, expect } from "@playwright/test";
+test("目標の保存・週移動・カレンダーから1日と時間帯を表示", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/demo");
+  await expect(page.locator(".record-table tbody tr").first()).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Notionで記録する" }),
+  ).toHaveAttribute(
+    "href",
+    "https://app.notion.com/p/3fda1dd31af88004bae2ede705a4b58f",
+  );
+  await page.getByLabel("毎週の目標（分）").fill("600");
+  await page.getByRole("button", { name: "目標を保存", exact: true }).click();
+  await expect(
+    page.getByRole("progressbar", { name: "週の目標達成率" }),
+  ).toBeVisible();
+  const goalText = await page.locator(".goal-result").innerText();
+  await page.getByRole("button", { name: "前の週", exact: true }).click();
+  await expect(
+    page.getByText("表示週の学習時間", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".goal-result")).toHaveText(goalText, {
+    useInnerText: true,
+  });
+  await page.getByRole("button", { name: "次の週", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "次の週", exact: true }),
+  ).toBeDisabled();
+  const month = await page.locator(".calendar-navigation strong").innerText();
+  await page.getByRole("button", { name: "前の月", exact: true }).click();
+  await expect(page.locator(".calendar-navigation strong")).not.toHaveText(
+    month,
+  );
+  await page.getByRole("button", { name: "今月へ", exact: true }).click();
+  await expect(page.locator(".calendar-navigation strong")).toHaveText(month);
+  await page.locator(".calendar-day.has-record").first().click();
+  await expect(
+    page.getByRole("heading", { name: "時間帯別の学習時間", exact: true }),
+  ).toBeVisible();
+  await page.getByText("時間帯別の数値を表で見る", { exact: true }).click();
+  await expect(
+    page
+      .getByRole("table", { name: "時間帯別の学習時間（分）", exact: true })
+      .locator("tbody tr"),
+  ).toHaveCount(24);
+  await expect(page.locator(".hourly-note")).toContainText("1日合計");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.reload();
+  await expect(page.getByLabel("毎週の目標（分）")).toHaveValue("600");
+  expect(errors).toEqual([]);
+});
 test("デモ・フィルター・状態・更新とレスポンシブ表示", async ({
   page,
 }, testInfo) => {

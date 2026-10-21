@@ -1,0 +1,103 @@
+import {
+  addDays,
+  aggregate,
+  daysInRange,
+  monday,
+  studyDate,
+  type StudyRecord,
+} from "./study";
+
+export const STUDY_LOG_URL =
+  "https://app.notion.com/p/3fda1dd31af88004bae2ede705a4b58f";
+
+export function shiftedWeek(today: string, offset: number) {
+  const start = addDays(monday(today), Math.min(0, offset) * 7);
+  return { start, end: offset >= 0 ? today : addDays(start, 6) };
+}
+export function shiftMonth(month: string, offset: number) {
+  const date = new Date(`${month}-01T00:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + offset);
+  return date.toISOString().slice(0, 7);
+}
+export function monthRange(month: string) {
+  return {
+    start: `${month}-01`,
+    end: addDays(`${shiftMonth(month, 1)}-01`, -1),
+  };
+}
+export function monthCalendar(
+  records: StudyRecord[],
+  month: string,
+  subject = "all",
+) {
+  const range = monthRange(month);
+  const daily = aggregate(records, range, subject).daily;
+  const start = monday(range.start);
+  const last = addDays(monday(range.end), 6);
+  const byDate = new Map(daily.map((d) => [d.date, d]));
+  return daysInRange({ start, end: last }).map((date) => ({
+    date,
+    inMonth: date.slice(0, 7) === month,
+    recorded: byDate.get(date)?.recorded ?? false,
+    total: byDate.get(date)?.total ?? 0,
+  }));
+}
+export function goalProgress(actual: number, target: number) {
+  if (!Number.isFinite(target) || target <= 0 || target > 10080) return null;
+  return {
+    percent: (actual / target) * 100,
+    remaining: Math.max(0, target - actual),
+  };
+}
+
+// Only place minutes on a clock when both endpoints and the actual duration agree.
+// Breaks / mismatched durations cannot safely be assigned to particular hours.
+export function hourlyStudy(
+  records: StudyRecord[],
+  date: string,
+  subject = "all",
+) {
+  const summary = aggregate(records, { start: date, end: date }, subject);
+  const subjects = summary.breakdown.map((s) => s.name);
+  const hours = Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    label: `${hour}時`,
+    total: 0,
+    subjects: Object.fromEntries(subjects.map((s) => [s, 0])),
+  }));
+  let unknownMinutes = 0;
+  let unknownRecords = 0;
+  for (const r of summary.records) {
+    const start = Date.parse(r.startedAt ?? "");
+    const end = Date.parse(r.endedAt ?? "");
+    const timed =
+      r.startedAt?.includes("T") &&
+      r.endedAt?.includes("T") &&
+      studyDate(r.startedAt) === date &&
+      studyDate(r.endedAt) === date &&
+      end > start &&
+      Math.abs((end - start) / 60000 - r.durationMinutes) < 0.00001;
+    if (!timed) {
+      unknownMinutes += r.durationMinutes;
+      unknownRecords++;
+      continue;
+    }
+    const midnight = Date.parse(`${date}T00:00:00+09:00`);
+    for (const row of hours) {
+      const left = midnight + row.hour * 3600000;
+      const minutes =
+        Math.max(0, Math.min(end, left + 3600000) - Math.max(start, left)) /
+        60000;
+      row.total += minutes;
+      row.subjects[r.subject] += minutes;
+    }
+  }
+  return {
+    hours,
+    subjects: summary.breakdown,
+    unknownMinutes,
+    unknownRecords,
+    knownMinutes: hours.reduce((sum, h) => sum + h.total, 0),
+    total: summary.total,
+  };
+}

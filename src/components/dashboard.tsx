@@ -33,6 +33,13 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import {
+  HourlyChart,
+  RecordShortcut,
+  StudyCalendar,
+  WeeklyGoal,
+} from "./study-features";
+import { shiftedWeek } from "@/lib/study-features";
 import { demoSnapshot } from "@/lib/demo";
 import {
   addDays,
@@ -67,6 +74,8 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
   const [custom, setCustom] = useState({ start: "", end: "" });
   const [scenario, setScenario] = useState("normal");
   const [page, setPage] = useState(1);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [calendarMonth, setCalendarMonth] = useState("");
   const canRead = mode === "demo" || authenticated;
   const load = useCallback(
     async (force = false, signal?: AbortSignal) => {
@@ -126,7 +135,10 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
   let range = { start: today, end: today };
   if (today)
     try {
-      range = periodRange(period, today, custom);
+      range =
+        period === "week"
+          ? shiftedWeek(today, weekOffset)
+          : periodRange(period, today, custom);
     } catch (e) {
       rangeError = (e as Error).message;
     }
@@ -141,6 +153,19 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
     () => (today ? weekComparison(records, today, subject) : null),
     [records, today, subject],
   );
+  const selectedWeek = useMemo(
+    () =>
+      today
+        ? weekComparison(records, shiftedWeek(today, weekOffset).end, subject)
+        : null,
+    [records, today, weekOffset, subject],
+  );
+  const allWeek = useMemo(
+    () => (today ? weekComparison(records, today).current : null),
+    [records, today],
+  );
+  const displayedWeek = period === "week" ? selectedWeek : week;
+  const isPastWeek = period === "week" && weekOffset < 0;
   const trend = useMemo(
     () =>
       today
@@ -162,6 +187,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
   const issues = (data?.issues.length ?? 0) + (scenario === "issues" ? 2 : 0);
   const selectPeriod = (value: Period) => {
     setPeriod(value);
+    if (value === "week") setWeekOffset(0);
     setPage(1);
     if (value === "custom" && !custom.start)
       setCustom({ start: addDays(today, -13), end: today });
@@ -354,6 +380,48 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   </button>
                 </div>
               </section>
+              <div className="study-actions">
+                {period === "week" && (
+                  <div className="week-navigation" aria-label="週の移動">
+                    <button
+                      className="refresh-button"
+                      aria-label="前の週"
+                      onClick={() => {
+                        setWeekOffset(weekOffset - 1);
+                        setPage(1);
+                      }}
+                    >
+                      <ChevronLeft size={16} /> 前週
+                    </button>
+                    <span>
+                      {range.start} 〜 {range.end}
+                    </span>
+                    <button
+                      className="refresh-button"
+                      aria-label="次の週"
+                      disabled={weekOffset >= 0}
+                      onClick={() => {
+                        setWeekOffset(weekOffset + 1);
+                        setPage(1);
+                      }}
+                    >
+                      翌週 <ChevronRight size={16} />
+                    </button>
+                    {weekOffset < 0 && (
+                      <button
+                        className="refresh-button"
+                        onClick={() => {
+                          setWeekOffset(0);
+                          setPage(1);
+                        }}
+                      >
+                        今週へ戻る
+                      </button>
+                    )}
+                  </div>
+                )}
+                <RecordShortcut />
+              </div>
               {period === "custom" && (
                 <div className="custom-range">
                   <label>
@@ -427,49 +495,56 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   <RefreshCw className="spinning" />
                   学習記録を読み込んでいます…
                 </div>
-              ) : summary && week && data ? (
+              ) : summary && displayedWeek && allWeek && data ? (
                 <>
-                  <section className="stats-grid" aria-label="今週のサマリー">
+                  <section className="stats-grid" aria-label="週のサマリー">
                     <article className="stat-card featured">
                       <div className="stat-label">
-                        <span>今週の学習時間</span>
+                        <span>
+                          {isPastWeek ? "表示週の学習時間" : "今週の学習時間"}
+                        </span>
                         <span className="stat-icon">
                           <Clock3 size={18} />
                         </span>
                       </div>
                       <div className="stat-value">
-                        {Math.floor(week.current.total / 60)}
+                        {Math.floor(displayedWeek.current.total / 60)}
                         <span>時間</span>{" "}
-                        {Number((week.current.total % 60).toFixed(1))}
+                        {Number((displayedWeek.current.total % 60).toFixed(1))}
                         <span>分</span>
                       </div>
                       <div className="stat-foot">
-                        {week.current.records.length}件の記録{" "}
+                        {displayedWeek.current.records.length}件の記録{" "}
                         <span className="tiny-dot" />{" "}
                         {subject === "all" ? "すべての教科" : subject}
                       </div>
                     </article>
                     <article className="stat-card">
                       <div className="stat-label">
-                        <span>今週の記録日数</span>
+                        <span>
+                          {isPastWeek ? "表示週の記録日数" : "今週の記録日数"}
+                        </span>
                         <span className="stat-icon">
                           <CalendarDays size={18} />
                         </span>
                       </div>
                       <div className="stat-value">
-                        {week.current.recordedDays}
+                        {displayedWeek.current.recordedDays}
                         <span>日</span>
-                        <small>/ {week.current.calendarDays}日</small>
+                        <small>/ {displayedWeek.current.calendarDays}日</small>
                       </div>
                       <div className="stat-foot">
-                        月曜日から今日まで · 未記録日は含めません
+                        {isPastWeek
+                          ? "月曜日から日曜日まで"
+                          : "月曜日から今日まで"}{" "}
+                        · 未記録日は含めません
                       </div>
                     </article>
                     <article className="stat-card">
                       <div className="stat-label">
                         <span>前週の同期間との差</span>
                         <span className="stat-icon">
-                          {week.difference >= 0 ? (
+                          {displayedWeek.difference >= 0 ? (
                             <ArrowUpRight size={18} />
                           ) : (
                             <ArrowDownRight size={18} />
@@ -477,31 +552,43 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                         </span>
                       </div>
                       <div className="stat-value difference">
-                        {week.difference > 0
+                        {displayedWeek.difference > 0
                           ? "+"
-                          : week.difference < 0
+                          : displayedWeek.difference < 0
                             ? "−"
                             : ""}
-                        {Number((Math.abs(week.difference) / 60).toFixed(1))}
+                        {Number(
+                          (Math.abs(displayedWeek.difference) / 60).toFixed(1),
+                        )}
                         <span>時間</span>
-                        {week.percent !== null && (
+                        {displayedWeek.percent !== null && (
                           <em>
-                            {week.percent > 0 ? "+" : ""}
-                            {Math.round(week.percent)}%
+                            {displayedWeek.percent > 0 ? "+" : ""}
+                            {Math.round(displayedWeek.percent)}%
                           </em>
                         )}
                       </div>
                       <div className="stat-foot">
-                        比較：{week.previous.start.slice(5)} ～{" "}
-                        {week.previous.end.slice(5)}
-                        {week.percent === null ? "（前週0分・増加率なし）" : ""}
+                        比較：{displayedWeek.previous.start.slice(5)} ～{" "}
+                        {displayedWeek.previous.end.slice(5)}
+                        {displayedWeek.percent === null
+                          ? "（前週0分・増加率なし）"
+                          : ""}
                       </div>
                     </article>
                   </section>
+                  <WeeklyGoal
+                    total={allWeek.total}
+                    mode={mode}
+                    weekStart={periodRange("week", today).start}
+                  />
                   <div className="section-heading">
                     <div>
                       <h2>
-                        {PERIODS.find(([p]) => p === period)?.[1]}の学習レポート
+                        {isPastWeek
+                          ? "表示週"
+                          : PERIODS.find(([p]) => p === period)?.[1]}
+                        の学習レポート
                       </h2>
                       <p>
                         {range.start} ～ {range.end} <span>·</span> 合計{" "}
@@ -520,109 +607,125 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                     </div>
                   )}
                   <div className="charts-grid">
-                    <section className="panel daily-panel">
-                      <div className="panel-heading">
-                        <div>
-                          <h3>日々の学習時間</h3>
-                          <p>教科ごとの積み重ねを振り返る</p>
+                    {range.start === range.end ? (
+                      <HourlyChart
+                        records={records}
+                        date={range.start}
+                        subject={subject}
+                      />
+                    ) : (
+                      <section className="panel daily-panel">
+                        <div className="panel-heading">
+                          <div>
+                            <h3>日々の学習時間</h3>
+                            <p>教科ごとの積み重ねを振り返る</p>
+                          </div>
+                          <span className="unit-tag">単位：分</span>
                         </div>
-                        <span className="unit-tag">単位：分</span>
-                      </div>
-                      <div className="chart-container">
-                        <ResponsiveContainer
-                          width="100%"
-                          height="100%"
-                          minWidth={0}
-                        >
-                          <BarChart
-                            data={summary.daily}
-                            margin={{ top: 15, right: 6, bottom: 0, left: -24 }}
-                            accessibilityLayer
+                        <div className="chart-container">
+                          <ResponsiveContainer
+                            width="100%"
+                            height="100%"
+                            minWidth={0}
                           >
-                            <CartesianGrid vertical={false} stroke="#edf0ed" />
-                            <XAxis
-                              dataKey="label"
-                              tickLine={false}
-                              axisLine={false}
-                              tick={{ fill: "#89918b", fontSize: 11 }}
-                              minTickGap={22}
-                            />
-                            <YAxis
-                              tickLine={false}
-                              axisLine={false}
-                              tick={{ fill: "#89918b", fontSize: 11 }}
-                            />
-                            <Tooltip
-                              cursor={{ fill: "#f3f6f3" }}
-                              formatter={(value) => `${value}分`}
-                              contentStyle={{
-                                border: "1px solid #e5eae5",
-                                borderRadius: 12,
-                                fontSize: 12,
+                            <BarChart
+                              data={summary.daily}
+                              margin={{
+                                top: 15,
+                                right: 6,
+                                bottom: 0,
+                                left: -24,
                               }}
-                            />
-                            {summary.breakdown.map((s) => (
-                              <Bar
-                                key={s.name}
-                                dataKey={s.name}
-                                stackId="study"
-                                isAnimationActive={false}
-                                fill={s.color}
-                                maxBarSize={38}
+                              accessibilityLayer
+                            >
+                              <CartesianGrid
+                                vertical={false}
+                                stroke="#edf0ed"
                               />
-                            ))}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="chart-legend">
-                        {summary.breakdown.map((s) => (
-                          <span key={s.name}>
-                            <i style={{ background: s.color }} />
-                            {s.name}
-                          </span>
-                        ))}
-                      </div>
-                      <details className="data-details">
-                        <summary>日別の数値を表で見る</summary>
-                        <div className="table-scroll">
-                          <table>
-                            <caption className="sr-only">
-                              日別の学習時間（分）
-                            </caption>
-                            <thead>
-                              <tr>
-                                <th>日付</th>
-                                {summary.breakdown.map((s) => (
-                                  <th key={s.name}>{s.name}</th>
-                                ))}
-                                <th>合計</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {summary.daily.map((d) => (
-                                <tr key={d.date}>
-                                  <td>{d.date}</td>
-                                  {summary.breakdown.map((s) => (
-                                    <td key={s.name}>
-                                      {d.recorded
-                                        ? String(
-                                            (d as Record<string, unknown>)[
-                                              s.name
-                                            ] ?? 0,
-                                          )
-                                        : "—"}
-                                    </td>
-                                  ))}
-                                  <td>
-                                    {d.recorded ? `${d.total}分` : "未記録"}
-                                  </td>
-                                </tr>
+                              <XAxis
+                                dataKey="label"
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{ fill: "#89918b", fontSize: 11 }}
+                                minTickGap={22}
+                              />
+                              <YAxis
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{ fill: "#89918b", fontSize: 11 }}
+                              />
+                              <Tooltip
+                                cursor={{ fill: "#f3f6f3" }}
+                                formatter={(value) => `${value}分`}
+                                contentStyle={{
+                                  border: "1px solid #e5eae5",
+                                  borderRadius: 12,
+                                  fontSize: 12,
+                                }}
+                              />
+                              {summary.breakdown.map((s) => (
+                                <Bar
+                                  key={s.name}
+                                  dataKey={s.name}
+                                  stackId="study"
+                                  isAnimationActive={false}
+                                  fill={s.color}
+                                  maxBarSize={38}
+                                />
                               ))}
-                            </tbody>
-                          </table>
+                            </BarChart>
+                          </ResponsiveContainer>
                         </div>
-                      </details>
-                    </section>
+                        <div className="chart-legend">
+                          {summary.breakdown.map((s) => (
+                            <span key={s.name}>
+                              <i style={{ background: s.color }} />
+                              {s.name}
+                            </span>
+                          ))}
+                        </div>
+                        <details className="data-details">
+                          <summary>日別の数値を表で見る</summary>
+                          <div className="table-scroll">
+                            <table>
+                              <caption className="sr-only">
+                                日別の学習時間（分）
+                              </caption>
+                              <thead>
+                                <tr>
+                                  <th>日付</th>
+                                  {summary.breakdown.map((s) => (
+                                    <th key={s.name}>{s.name}</th>
+                                  ))}
+                                  <th>合計</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {summary.daily.map((d) => (
+                                  <tr key={d.date}>
+                                    <td>{d.date}</td>
+                                    {summary.breakdown.map((s) => (
+                                      <td key={s.name}>
+                                        {d.recorded
+                                          ? String(
+                                              (d as Record<string, unknown>)[
+                                                s.name
+                                              ] ?? 0,
+                                            )
+                                          : "—"}
+                                      </td>
+                                    ))}
+                                    <td>
+                                      {d.recorded ? `${d.total}分` : "未記録"}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                      </section>
+                    )}
                     <section className="panel subject-panel">
                       <div className="panel-heading">
                         <div>
@@ -819,6 +922,21 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                       </span>
                     </section>
                   </div>
+                  <StudyCalendar
+                    records={records}
+                    month={calendarMonth || today.slice(0, 7)}
+                    onMonth={setCalendarMonth}
+                    subject={subject}
+                    today={today}
+                    selectedDate={
+                      range.start === range.end ? range.start : undefined
+                    }
+                    onDay={(date) => {
+                      setCustom({ start: date, end: date });
+                      setPeriod("custom");
+                      setPage(1);
+                    }}
+                  />
                   <section className="panel records-panel" id="records">
                     <div className="panel-heading">
                       <div>

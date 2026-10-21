@@ -42,7 +42,11 @@ type Property = {
   type: string;
   title?: { plain_text: string }[];
   rich_text?: { plain_text: string }[];
-  date?: { start: string; end?: string | null } | null;
+  date?: {
+    start: string;
+    end?: string | null;
+    time_zone?: string | null;
+  } | null;
   select?: { name: string } | null;
   number?: number | null;
 };
@@ -82,9 +86,19 @@ export function normalizePages(
       });
       continue;
     }
-    const date = studyDate(get("date")?.date?.start);
+    const rawDate = get("date")?.date;
+    // Notion also supports local timestamps with an explicit IANA zone.
+    // This dashboard uses Tokyo; unknown local zones stay invalid instead of guessing.
+    const zoned = (value?: string | null) =>
+      value &&
+      rawDate?.time_zone === "Asia/Tokyo" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(value)
+        ? `${value}+09:00`
+        : value;
+    const start = zoned(rawDate?.start);
+    const date = studyDate(start);
     const duration = get("duration")?.number;
-    const end = get("date")?.date?.end;
+    const end = zoned(rawDate?.end);
     if (!date || (end && studyDate(end) !== date)) {
       issues.push({
         id: page.id,
@@ -114,6 +128,8 @@ export function normalizePages(
       durationMinutes: duration,
       notionUrl: page.url,
       updatedAt: page.last_edited_time,
+      ...(start?.includes("T") && studyDate(start) ? { startedAt: start } : {}),
+      ...(end?.includes("T") && studyDate(end) ? { endedAt: end } : {}),
     });
   }
   return { records, issues, duplicates: pages.length - unique.size };

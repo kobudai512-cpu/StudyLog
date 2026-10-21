@@ -7,6 +7,8 @@ export type StudyRecord = {
   durationMinutes: number;
   notionUrl: string;
   updatedAt: string;
+  startedAt?: string;
+  endedAt?: string;
 };
 export type DataIssue = { id: string; reason: string };
 export type Snapshot = {
