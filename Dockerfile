@@ -13,6 +13,6 @@ WORKDIR /app
 RUN mkdir -p /data/notion && chown -R node:node /data /app
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
-USER node
+COPY --from=build /app/scripts/container-start.mjs ./container-start.mjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "container-start.mjs"]

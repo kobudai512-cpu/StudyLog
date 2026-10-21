@@ -33,3 +33,24 @@ jobs:
           name: browser-results
           path: test-results
           retention-days: 7
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build deployable container without credentials
+        run: docker build -t winkle-study:ci .
+      - name: Check mounted volume, process identity, liveness and API protection
+        run: |
+          docker volume create winkle-ci-cache
+          docker run -d --name winkle-ci -p 127.0.0.1:3001:3000 --mount source=winkle-ci-cache,target=/data/notion winkle-study:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3001/api/health > /dev/null && break; sleep 2; done
+          curl -fsS http://127.0.0.1:3001/api/health
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/study)" = "401"
+          docker exec winkle-ci cat /proc/1/status | grep -E '^Uid:[[:space:]]+1000[[:space:]]+1000'
+          docker exec --user 1000 winkle-ci node --input-type=module -e "import {writeFile,unlink} from 'node:fs/promises'; await writeFile('/data/notion/ci-probe','ok'); await unlink('/data/notion/ci-probe');"
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs winkle-ci
+      - name: Stop test container
+        if: always()
+        run: docker rm -f winkle-ci || true

@@ -104,6 +104,21 @@ docker compose down
 
 Dockerなしでも`pnpm build`後、`CACHE_DIR`に実行ユーザー専用の永続ディレクトリを指定して`pnpm start`で実行できます。ポートはファイアウォールやプロキシで限定してください。
 
+### Railwayへの配置
+
+`railway.toml`でDockerビルドと`/api/health`の起動確認を指定しています。サービスは1台で動かし、永続ボリュームを`/data/notion`にマウントします。追加の集計DBは不要です。
+
+1. Railwayの非公開プロジェクトを作成し、GitHubの`kobudai512-cpu/StudyLog`、`main`をソースに指定。
+2. サービスへ永続ボリュームを1つ追加し、マウント先を`/data/notion`に設定。
+3. 実行時変数へ`NOTION_TOKEN`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`ALLOWED_EMAILS`と本番用の`NEXTAUTH_SECRET`を設定。`CACHE_DIR=/data/notion`、`HOSTNAME=0.0.0.0`、`PORT=3000`を指定。必要なら`NOTION_DATA_SOURCE_ID`も設定。
+4. RailwayのHTTPSドメインを発行し、そのオリジンを`NEXTAUTH_URL`へ設定。
+5. Google OAuthクライアントの承認済みリダイレクトURIへ`https://発行されたドメイン/api/auth/callback/google`を追加。ローカル用URIは残せます。
+6. デプロイ後に`/api/health`が200、未認証の`/api/study`が401になることを確認し、本人がGoogleログインして同期を確認。
+
+新規ボリュームのマウント時はイメージ内の所有権が隠れるため、コンテナーの起動処理がキャッシュディレクトリの所有者を設定し、**UID/GID 1000へ権限を落としてから**サーバーを開始します。ホストで実行ユーザーを上書きする場合は、この初期設定を実行できることを確認してください。秘密設定とキャッシュをイメージへコピーしません。
+
+アカウントの無料枠・クレジット・継続費用はRailway側で確認します。有料プランへの変更はこのリポジトリの設定では行いません。ドメイン自体は外部から到達できますが、個人の学習データはGoogleログインとメール許可リストで保護します。ヘルスチェックは稼働状態だけを返し、Notion・Googleの設定値や学習記録を返しません。
+
 ## 検証
 
 ```sh
