@@ -33,13 +33,9 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import {
-  HourlyChart,
-  RecordShortcut,
-  StudyCalendar,
-  WeeklyGoal,
-} from "./study-features";
+import { HourlyChart, StudyCalendar, WeeklyGoal } from "./study-features";
 import { shiftedWeek } from "@/lib/study-features";
+import RecordDialog from "./record-dialog";
 import { demoSnapshot } from "@/lib/demo";
 import {
   addDays,
@@ -434,7 +430,21 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                     )}
                   </div>
                 )}
-                <RecordShortcut />
+                <RecordDialog
+                  mode={mode}
+                  onSaved={(record) => {
+                    if (record)
+                      setData((current) =>
+                        current
+                          ? {
+                              ...current,
+                              records: [record, ...current.records],
+                            }
+                          : current,
+                      );
+                    else void load(false);
+                  }}
+                />
               </div>
               {period === "custom" && (
                 <div className="custom-range">
@@ -931,9 +941,6 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                             : "記録なし"}
                         </strong>
                       </div>
-                      <span className="reflection-flower" aria-hidden>
-                        ✳
-                      </span>
                     </section>
                   </div>
                   <StudyCalendar
@@ -1105,7 +1112,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
             </span>
             <span>
               日々の学びに、小さな光を。 <span className="footer-dot">·</span>{" "}
-              {mode === "demo" ? "DEMO DATA" : "READ ONLY · NOTION"}
+              {mode === "demo" ? "DEMO DATA" : "PRIVATE · NOTION"}
             </span>
           </footer>
         </main>

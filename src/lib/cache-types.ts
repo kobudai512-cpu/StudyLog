@@ -8,6 +8,18 @@ export type CacheState = {
   goalBindings?: GoalBindings;
   lastAttempt?: number;
   lastError?: string;
+  invalidated?: boolean;
+  retryNotBefore?: number;
+  submissions?: Record<
+    string,
+    {
+      hash: string;
+      status: "pending" | "created" | "rejected" | "unknown";
+      at: number;
+      id?: string;
+      notionUrl?: string;
+    }
+  >;
 };
 
 // The write operation belongs to the acquired lease, so an expired worker

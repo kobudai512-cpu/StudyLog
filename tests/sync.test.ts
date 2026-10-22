@@ -65,6 +65,17 @@ describe("永続キャッシュ・同期", () => {
     await synchronize(false, s, vi.fn().mockResolvedValue(result()));
     await expect(synchronize(true, s)).rejects.toMatchObject({ status: 429 });
   });
+  it("保存後の無効化は即時取得を許し、失敗後の連続再試行は制限", async () => {
+    const s = await store();
+    await s.write({ ...result(), lastAttempt: Date.now(), invalidated: true });
+    const load = vi.fn().mockRejectedValue(new Error("offline"));
+    expect((await synchronize(false, s, load)).stale).toBe(true);
+    await synchronize(false, s, load);
+    expect(load).toHaveBeenCalledTimes(1);
+    await expect(synchronize(true, s, load)).rejects.toMatchObject({
+      status: 429,
+    });
+  });
   it("別プロセス相当の同時ロックを抑止", async () => {
     const s = await store();
     const release = await s.lock();

@@ -19,23 +19,9 @@ import {
   hourlyStudy,
   monthCalendar,
   shiftMonth,
-  STUDY_LOG_URL,
 } from "@/lib/study-features";
 
 import { GOALS_URL } from "@/lib/goals";
-
-export function RecordShortcut() {
-  return (
-    <a
-      className="record-shortcut"
-      href={STUDY_LOG_URL}
-      target="_blank"
-      rel="noreferrer"
-    >
-      <ExternalLink size={15} /> Notionで記録する
-    </a>
-  );
-}
 
 export function WeeklyGoal({
   total,

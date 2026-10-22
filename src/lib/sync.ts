@@ -24,6 +24,7 @@ export async function synchronize(
   };
   if (
     !force &&
+    !state.invalidated &&
     state.snapshot &&
     Date.now() - Date.parse(state.snapshot.syncedAt) < 300000
   )
@@ -38,11 +39,16 @@ export async function synchronize(
     state = await store.read();
     if (
       !force &&
+      !state.invalidated &&
       state.snapshot &&
       Date.now() - Date.parse(state.snapshot.syncedAt) < 300000
     )
       return respond(Boolean(state.lastError), state.lastError);
-    if (state.lastAttempt && Date.now() - state.lastAttempt < 30000) {
+    if (
+      !state.invalidated &&
+      state.lastAttempt &&
+      Date.now() - state.lastAttempt < 30000
+    ) {
       if (force)
         throw new SyncError(
           "更新は30秒に1回までです。少し待って再試行してください。",
@@ -55,6 +61,8 @@ export async function synchronize(
       );
     }
     state.lastAttempt = Date.now();
+    // A successful save grants one immediate refresh, not unlimited failure retries.
+    state.invalidated = false;
     await unlock.write(state);
     try {
       const result = await load(state.bindings, state.goalBindings);
@@ -70,5 +78,18 @@ export async function synchronize(
     }
   } finally {
     await unlock();
+  }
+}
+export async function invalidateStudy() {
+  const store = configuredStore();
+  const lease = await store.lock();
+  if (!lease) return false;
+  try {
+    const state = await store.read();
+    state.invalidated = true;
+    await lease.write(state);
+    return true;
+  } finally {
+    await lease();
   }
 }

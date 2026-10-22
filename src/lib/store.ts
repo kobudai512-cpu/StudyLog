@@ -11,6 +11,7 @@ import { join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import type { CacheLease, CacheState, CacheStore } from "./cache-types";
 import { RedisStore } from "./redis-store";
+import { SOURCE_ID } from "./notion-schema";
 export type { CacheState } from "./cache-types";
 export class FileStore implements CacheStore {
   constructor(readonly directory: string) {}
@@ -61,18 +62,26 @@ export class FileStore implements CacheStore {
     return Object.assign(release, { write: this.write.bind(this) });
   }
 }
-export function configuredStore(): CacheStore {
+export function configuredStore(purpose = "sync"): CacheStore {
   const namespace = createHash("sha256")
     .update(
-      [
-        "v3-notion-goals-completion-time",
-        process.env.NOTION_GOALS_DATA_SOURCE_ID,
-        process.env.NOTION_GOALS_PROPERTY_IDS,
-        process.env.NOTION_DATA_SOURCE_ID,
-        process.env.NOTION_TOKEN,
-        process.env.NOTION_PROPERTY_IDS,
-        process.env.VERCEL_ENV,
-      ].join(":"),
+      (purpose === "record-submissions"
+        ? [
+            purpose,
+            process.env.NOTION_DATA_SOURCE_ID || SOURCE_ID,
+            process.env.VERCEL_ENV,
+          ]
+        : [
+            purpose,
+            "v3-notion-goals-completion-time",
+            process.env.NOTION_GOALS_DATA_SOURCE_ID,
+            process.env.NOTION_GOALS_PROPERTY_IDS,
+            process.env.NOTION_DATA_SOURCE_ID,
+            process.env.NOTION_TOKEN,
+            process.env.NOTION_PROPERTY_IDS,
+            process.env.VERCEL_ENV,
+          ]
+      ).join(":"),
     )
     .digest("hex")
     .slice(0, 24);

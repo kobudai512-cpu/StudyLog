@@ -7,11 +7,9 @@ test("Notion目標の表示・週移動・カレンダーから1日と時間帯�
   await page.goto("/demo");
   await expect(page.locator(".record-table tbody tr").first()).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Notionで記録する" }),
-  ).toHaveAttribute(
-    "href",
-    "https://app.notion.com/p/3fda1dd31af88004bae2ede705a4b58f",
-  );
+    page.getByRole("button", { name: "記録する", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".reflection-flower")).toHaveCount(0);
   await expect(page.getByText("Notionと同期", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("progressbar", { name: "週の目標達成率" }),
@@ -70,7 +68,10 @@ test("デモ・フィルター・状態・更新とレスポンシブ表示", as
   ).toBeVisible();
   await expect(page.locator(".record-table tbody tr").first()).toBeVisible();
   await page.getByRole("button", { name: "今月", exact: true }).click();
-  await page.getByLabel("教科", { exact: true }).selectOption("数学");
+  await page
+    .getByRole("region", { name: "表示条件" })
+    .getByLabel("教科", { exact: true })
+    .selectOption("数学");
   await expect(page.locator(".record-table .subject-badge").first()).toHaveText(
     "数学",
   );
@@ -84,7 +85,10 @@ test("デモ・フィルター・状態・更新とレスポンシブ表示", as
     page.getByRole("alert").filter({ hasText: "開始日と終了日" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "今週", exact: true }).click();
-  await page.getByLabel("教科", { exact: true }).selectOption("all");
+  await page
+    .getByRole("region", { name: "表示条件" })
+    .getByLabel("教科", { exact: true })
+    .selectOption("all");
   await page.getByRole("button", { name: "更新", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "更新", exact: true }),
@@ -114,6 +118,8 @@ test("デモ・フィルター・状態・更新とレスポンシブ表示", as
 });
 test("未認証アクセスは実データを返さない", async ({ request, page }) => {
   expect((await request.get("/api/study")).status()).toBe(401);
+  expect((await request.get("/api/records")).status()).toBe(401);
+  expect((await request.post("/api/records", { data: {} })).status()).toBe(401);
   expect(
     (
       await request.post("/api/study", {
@@ -126,4 +132,48 @@ test("未認証アクセスは実データを返さない", async ({ request, pa
     page.getByRole("link", { name: /デモダッシュボードを見る/ }),
   ).toBeVisible();
   await expect(page.locator(".record-table")).toHaveCount(0);
+});
+
+test("記録ポップアップ・推定プレビュー・デモ保存・閉じる操作", async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/demo");
+  await page.getByRole("button", { name: "記録する", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "勉強を記録する" });
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByLabel("勉強内容", { exact: true })
+    .fill("GUIからの架空の記録");
+  await dialog.getByLabel("教科", { exact: true }).selectOption("物理");
+  await dialog
+    .getByLabel("終了日時（日本時間）", { exact: true })
+    .fill("2026-10-22T02:31");
+  await dialog.getByLabel("実績時間（分）", { exact: true }).fill("31");
+  await expect(dialog.locator(".record-preview")).toContainText("02:00");
+  await expect(dialog.locator(".record-preview")).toContainText("02:31");
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole("button", { name: "記録する", exact: true }).click();
+  await expect(dialog.getByLabel("勉強内容", { exact: true })).toHaveValue(
+    "GUIからの架空の記録",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `test-results/${testInfo.project.name}-record-dialog.png`,
+  });
+  await dialog.getByRole("button", { name: "デモに追加", exact: true }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "デモに追加しました" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "閉じる", exact: true }).click();
+  await expect(page.locator(".record-table")).toContainText(
+    "GUIからの架空の記録",
+  );
+  expect(errors).toEqual([]);
 });
