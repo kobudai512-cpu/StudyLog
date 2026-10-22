@@ -1,5 +1,4 @@
 "use client";
-import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink, Target } from "lucide-react";
 import {
   Bar,
@@ -10,7 +9,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { minutesLabel, type StudyRecord } from "@/lib/study";
+import {
+  minutesLabel,
+  type StudyRecord,
+  type StudyResponse,
+} from "@/lib/study";
 import {
   goalProgress,
   hourlyStudy,
@@ -18,6 +21,8 @@ import {
   shiftMonth,
   STUDY_LOG_URL,
 } from "@/lib/study-features";
+
+import { GOALS_URL } from "@/lib/goals";
 
 export function RecordShortcut() {
   return (
@@ -34,51 +39,49 @@ export function RecordShortcut() {
 
 export function WeeklyGoal({
   total,
-  mode,
   weekStart,
+  data,
 }: {
   total: number;
-  mode: "live" | "demo";
   weekStart: string;
+  data: StudyResponse;
 }) {
-  const key = `winkle-weekly-goal-v1-${mode}`;
-  const [target, setTarget] = useState<number | null>(null);
-  const [draft, setDraft] = useState("");
-  const [message, setMessage] = useState("");
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    try {
-      const value = Number(localStorage.getItem(key));
-      if (goalProgress(0, value)) {
-        // Loading browser-owned preferences only after hydration.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setTarget(value);
-        setDraft(String(value));
-      }
-    } catch {
-      setMessage("保存設定を読み込めません。この画面内で目標を使えます。");
-    }
-    setReady(true);
-  }, [key]);
-  const progress = target ? goalProgress(total, target) : null;
+  const matches = (data.goals ?? []).filter((g) => g.weekStart === weekStart);
+  const issues = (data.goalIssues ?? []).filter(
+    (i) => !i.weekStart || i.weekStart === weekStart,
+  );
+  const goal = matches.length === 1 && !issues.length ? matches[0] : undefined;
+  const progress = goal?.targetMinutes
+    ? goalProgress(total, goal.targetMinutes)
+    : null;
   return (
     <section className="panel goal-panel" aria-label="週の目標">
       <div className="panel-heading">
         <div>
           <h3>
-            <Target size={18} /> 週の目標
+            <Target size={18} />
+            週の目標
           </h3>
-          <p>{weekStart}からの今週・すべての教科</p>
+          <p>{weekStart}からの週・すべての教科</p>
         </div>
-        <span className="unit-tag">このブラウザに保存</span>
+        <span className="unit-tag">Notionと同期</span>
       </div>
       <div className="goal-body">
-        {progress ? (
+        {data.goalError ? (
+          <p role="status">{data.goalError}</p>
+        ) : matches.length > 1 ? (
+          <p role="status">
+            同じ週の目標が{matches.length}
+            件あります。Notionで1件にまとめてください。
+          </p>
+        ) : issues.length ? (
+          <p role="status">{issues.map((i) => i.reason).join(" ")}</p>
+        ) : progress ? (
           <div className="goal-result">
             <div>
               <strong>{progress.percent.toFixed(1)}%</strong>
               <span>
-                {minutesLabel(total)} / {minutesLabel(target!)}
+                {minutesLabel(total)} / {minutesLabel(goal!.targetMinutes!)}
               </span>
             </div>
             <progress
@@ -88,74 +91,34 @@ export function WeeklyGoal({
             />
             <p>
               {progress.remaining > 0
-                ? `今週あと ${minutesLabel(progress.remaining)}`
-                : "今週の目標を達成しました！"}
+                ? `目標まであと ${minutesLabel(progress.remaining)}`
+                : "この週の目標を達成しました！"}
             </p>
+            {goal?.memo && <p>{goal.memo}</p>}
           </div>
         ) : (
           <p className="muted">
-            週の目標を決めて、今週の積み重ねを確認しましょう。
+            この週の目標は未設定です。Notionの「週の目標」で月曜日の日付と目標時間（分）を入力してください。
           </p>
         )}
-        <form
-          className="goal-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const value = Number(draft);
-            if (!Number.isInteger(value) || !goalProgress(0, value)) {
-              setMessage("1〜10080分の整数で入力してください。");
-              return;
-            }
-            setTarget(value);
-            try {
-              localStorage.setItem(key, String(value));
-              setMessage("目標を保存しました。次の週にも引き継ぎます。");
-            } catch {
-              setMessage(
-                "保存できませんでした。今回の表示中だけ目標を使います。",
-              );
-            }
-          }}
-        >
-          <label>
-            毎週の目標（分）
-            <input
-              type="number"
-              min="1"
-              max="10080"
-              step="1"
-              required
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="例：600"
-              disabled={!ready}
-            />
-          </label>
-          <button className="refresh-button" disabled={!ready}>
-            目標を保存
-          </button>
-          {target && (
-            <button
-              type="button"
-              className="refresh-button"
-              onClick={() => {
-                try {
-                  localStorage.removeItem(key);
-                  setTarget(null);
-                  setDraft("");
-                  setMessage("目標を解除しました。");
-                } catch {
-                  setMessage("保存済みの目標を解除できませんでした。");
-                }
-              }}
-            >
-              解除
-            </button>
-          )}
-        </form>
-        {message && (
-          <p className="goal-message" role="status">
-            {message}
+        {data.stale && (
+          <p className="goal-message">
+            前回成功時の目標・実績を表示しています。
+          </p>
+        )}
+        {data.mode === "live" ? (
+          <a
+            className="record-shortcut"
+            href={goal?.notionUrl || GOALS_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink size={15} />
+            Notionで目標を設定
+          </a>
+        ) : (
+          <p className="goal-message">
+            デモの目標も架空データです。実際の目標はNotionで設定します。
           </p>
         )}
       </div>
@@ -261,7 +224,7 @@ export function HourlyChart({
       <div className="panel-heading">
         <div>
           <h3>時間帯別の学習時間</h3>
-          <p>{date} · 1時間ごと・日本時間</p>
+          <p>{date} · 推定・1時間ごと・日本時間</p>
         </div>
         <span className="unit-tag">単位：分</span>
       </div>
@@ -312,7 +275,7 @@ export function HourlyChart({
       </div>
       <div className="hourly-note">
         <p>
-          時間帯が分かる記録：{minutesLabel(result.knownMinutes)} ／ 1日合計：
+          推定できる記録：{minutesLabel(result.knownMinutes)} ／ 1日合計：
           {minutesLabel(result.total)}
         </p>
         {result.unknownRecords > 0 && (
@@ -324,7 +287,9 @@ export function HourlyChart({
         <details>
           <summary>時間帯を表示するには</summary>
           <p>
-            Notionの「日付」で「時刻を含む」と「終了日」を有効にし、開始・終了時刻を入力してください。実績の「学習時間（分）」と経過時間が一致する記録を、時間の境目で分割します。時刻なし・開始のみ・逆転・実績と経過時間の不一致は、時間帯を推測せず「時間帯不明」に表示します。
+            Notionの「日付」を終了時刻として、実績の「学習時間（分）」だけさかのぼった連続した学習時間帯を推定します。例：2:31・31分
+            →
+            2:00〜2:31。休憩や中断は判別できません。時刻なしは「時間帯不明」。日付をまたぐ場合は各日に分けます。終了日のある旧形式は、その終了時刻を使います。
           </p>
         </details>
       </div>

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("目標の保存・週移動・カレンダーから1日と時間帯を表示", async ({
+test("Notion目標の表示・週移動・カレンダーから1日と時間帯を表示", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -12,8 +12,7 @@ test("目標の保存・週移動・カレンダーから1日と時間帯を表�
     "href",
     "https://app.notion.com/p/3fda1dd31af88004bae2ede705a4b58f",
   );
-  await page.getByLabel("毎週の目標（分）").fill("600");
-  await page.getByRole("button", { name: "目標を保存", exact: true }).click();
+  await expect(page.getByText("Notionと同期", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("progressbar", { name: "週の目標達成率" }),
   ).toBeVisible();
@@ -22,7 +21,7 @@ test("目標の保存・週移動・カレンダーから1日と時間帯を表�
   await expect(
     page.getByText("表示週の学習時間", { exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".goal-result")).toHaveText(goalText, {
+  await expect(page.locator(".goal-result")).not.toHaveText(goalText, {
     useInnerText: true,
   });
   await page.getByRole("button", { name: "次の週", exact: true }).click();
@@ -53,7 +52,9 @@ test("目標の保存・週移動・カレンダーから1日と時間帯を表�
     ),
   ).toBe(true);
   await page.reload();
-  await expect(page.getByLabel("毎週の目標（分）")).toHaveValue("600");
+  await expect(
+    page.getByRole("progressbar", { name: "週の目標達成率" }),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });
 test("デモ・フィルター・状態・更新とレスポンシブ表示", async ({

@@ -57,7 +57,7 @@ export async function synchronize(
     state.lastAttempt = Date.now();
     await unlock.write(state);
     try {
-      const result = await load(state.bindings);
+      const result = await load(state.bindings, state.goalBindings);
       state = { ...result, lastAttempt: Date.now() };
       await unlock.write(state);
       return respond(false);

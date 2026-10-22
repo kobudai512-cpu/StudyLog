@@ -7,7 +7,8 @@ import {
   shiftMonth,
 } from "@/lib/study-features";
 import { normalizePages, type RawPage } from "@/lib/notion-schema";
-import type { StudyRecord } from "@/lib/study";
+import { aggregate, type StudyRecord } from "@/lib/study";
+import { normalizeGoals, resolveGoalBindings } from "@/lib/goals";
 const date = "2026-10-22";
 const timed: StudyRecord = {
   id: "one",
@@ -37,7 +38,14 @@ describe("週の移動・月間カレンダー・目標", () => {
   });
   it("閏月の29日、月曜の列、ゼロ分の記録と未記録を区別", () => {
     const cells = monthCalendar(
-      [{ ...timed, date: "2024-02-29", durationMinutes: 0 }],
+      [
+        {
+          ...timed,
+          date: "2024-02-29",
+          endedAt: undefined,
+          durationMinutes: 0,
+        },
+      ],
       "2024-02",
     );
     expect(cells[0].date).toBe("2024-01-29");
@@ -88,21 +96,54 @@ describe("時間帯別集計", () => {
     expect(result.hours[8].total).toBe(30);
     expect(result.hours[9].total).toBe(60);
   });
-  it("時刻欠損・逆転・実績不一致は不明に残し、合計を保存", () => {
-    const unknown = [
-      { ...timed, id: "missing", startedAt: undefined },
-      { ...timed, id: "reverse", endedAt: `${date}T08:00:00+09:00` },
-      { ...timed, id: "mismatch", durationMinutes: 60 },
-    ];
-    const result = hourlyStudy([timed, ...unknown], date);
-    expect(result.unknownRecords).toBe(3);
-    expect(result.unknownMinutes).toBe(240);
+  it("終了時刻と実績から逆算し、時刻なしだけ不明に残す", () => {
+    const unknown = { ...timed, id: "missing", endedAt: undefined };
+    const result = hourlyStudy([timed, unknown], date);
+    expect(result.unknownRecords).toBe(1);
+    expect(result.unknownMinutes).toBe(90);
     expect(result.knownMinutes + result.unknownMinutes).toBe(result.total);
+  });
+  it("2:31と31分は2:00〜2:31と推定", () => {
+    const result = hourlyStudy(
+      [{ ...timed, endedAt: `${date}T02:31:00+09:00`, durationMinutes: 31 }],
+      date,
+    );
+    expect(result.hours[1].total).toBe(0);
+    expect(result.hours[2].total).toBe(31);
+    expect(result.total).toBe(31);
+  });
+  it("日付・週・年をまたいでも日別と時間帯の合計が一致", () => {
+    const r = {
+      ...timed,
+      date: "2027-01-01",
+      endedAt: "2027-01-01T00:10:00+09:00",
+      durationMinutes: 40,
+    };
+    expect(hourlyStudy([r], "2026-12-31").hours[23].total).toBe(30);
+    expect(hourlyStudy([r], "2027-01-01").hours[0].total).toBe(10);
+    expect(
+      aggregate([r], { start: "2026-12-31", end: "2027-01-01" }).total,
+    ).toBe(40);
+    expect(
+      aggregate([r], { start: "2026-12-31", end: "2026-12-31" }).records[0],
+    ).toMatchObject({ durationMinutes: 30, recordedDurationMinutes: 40 });
+    const sunday = {
+      ...r,
+      date: "2026-10-26",
+      endedAt: "2026-10-26T00:10:00+09:00",
+    };
+    expect(
+      aggregate([sunday], { start: "2026-10-19", end: "2026-10-25" }).total,
+    ).toBe(30);
   });
   it("別日と別教科は対象外、教科ごとに積み上げ", () => {
     const english = { ...timed, id: "english", subject: "英語" };
     const result = hourlyStudy(
-      [timed, english, { ...timed, id: "other", date: "2026-10-21" }],
+      [
+        timed,
+        english,
+        { ...timed, id: "other", date: "2026-10-21", endedAt: undefined },
+      ],
       date,
     );
     expect(result.hours[9].total).toBe(120);
@@ -110,7 +151,7 @@ describe("時間帯別集計", () => {
   });
   it("0分の有効記録も不明件数には残す", () => {
     const result = hourlyStudy(
-      [{ ...timed, startedAt: undefined, durationMinutes: 0 }],
+      [{ ...timed, endedAt: undefined, durationMinutes: 0 }],
       date,
     );
     expect(result.unknownRecords).toBe(1);
@@ -145,9 +186,9 @@ describe("Notion日付の時刻保持", () => {
     expect(
       normalizePages([page(timed.startedAt!, timed.endedAt!)], bindings)
         .records[0],
-    ).toMatchObject({ startedAt: timed.startedAt, endedAt: timed.endedAt });
+    ).toMatchObject({ endedAt: timed.endedAt });
     expect(
-      normalizePages([page(date, null)], bindings).records[0].startedAt,
+      normalizePages([page(date, null)], bindings).records[0].endedAt,
     ).toBeUndefined();
   });
   it("Asia/Tokyoを明示したローカル時刻にも対応", () => {
@@ -155,7 +196,64 @@ describe("Notion日付の時刻保持", () => {
       normalizePages(
         [page(`${date}T08:30:00`, `${date}T10:00:00`, "Asia/Tokyo")],
         bindings,
-      ).records[0].startedAt,
-    ).toBe(timed.startedAt);
+      ).records[0].endedAt,
+    ).toBe(timed.endedAt);
+  });
+  it("単一のNotion日時を終了時刻として正規化して逆算", () => {
+    const p = page(`${date}T02:31:00+09:00`, null);
+    p.properties.m.number = 31;
+    const normalized = normalizePages([p], bindings);
+    expect(normalized.records[0].endedAt).toBe(`${date}T02:31:00+09:00`);
+    expect(hourlyStudy(normalized.records, date).hours[2].total).toBe(31);
+  });
+});
+
+describe("Notionの週目標", () => {
+  const bindings = { week: "w", target: "t", memo: "m" };
+  const page = (id: string, week: string, target: number | null): RawPage => ({
+    id,
+    url: "https://app.notion.com/p/test",
+    last_edited_time: "2026-10-22T00:00:00Z",
+    properties: {
+      renamedWeek: { id: "w", type: "date", date: { start: week } },
+      renamedTarget: { id: "t", type: "number", number: target },
+      renamedMemo: { id: "m", type: "rich_text", rich_text: [] },
+    },
+  });
+  it("IDを保存して表示名変更に耐える", () => {
+    expect(
+      resolveGoalBindings(
+        {
+          x: { id: "w", name: "改名1", type: "date" },
+          y: { id: "t", name: "改名2", type: "number" },
+          z: { id: "m", name: "改名3", type: "rich_text" },
+        },
+        bindings,
+      ),
+    ).toEqual(bindings);
+  });
+  it("未入力は未設定、同週の別ページは重複検出用に保持、ページ重複は除去", () => {
+    const result = normalizeGoals(
+      [
+        page("a", "2026-10-19", null),
+        page("b", "2026-10-19", 600),
+        page("b", "2026-10-19", 600),
+      ],
+      bindings,
+    );
+    expect(result.goals).toHaveLength(2);
+    expect(result.goals[0].targetMinutes).toBeNull();
+    expect(result.goalIssues).toEqual([]);
+  });
+  it("不正な週・単位・負数・小数・範囲外は拒否", () => {
+    const result = normalizeGoals(
+      [
+        page("a", "2026-10-20", 600),
+        ...[-1, 0, 1.5, 10081].map((v, i) => page(String(i), "2026-10-19", v)),
+      ],
+      bindings,
+    );
+    expect(result.goals).toHaveLength(0);
+    expect(result.goalIssues).toHaveLength(5);
   });
 });

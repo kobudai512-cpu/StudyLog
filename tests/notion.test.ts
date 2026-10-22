@@ -27,6 +27,25 @@ const makePage = (): RawPage => ({
   },
 });
 describe("Notionスキーマと正規化", () => {
+  it("任意の単元プロパティが削除されても記録を取得できる", () => {
+    const schema = Object.fromEntries(
+      Object.entries(FIELDS)
+        .filter(([key]) => key !== "unit")
+        .map(([key, field]) => [
+          key,
+          {
+            id: bindings[key as keyof Bindings],
+            name: field.name,
+            type: field.type,
+          },
+        ]),
+    );
+    const resolved = resolveBindings(schema, bindings);
+    const p = makePage();
+    delete p.properties.unit;
+    expect(resolved.unit).toBe("");
+    expect(normalizePages([p], resolved).records).toHaveLength(1);
+  });
   it("表示名変更後もIDで解決", () => {
     const schema = Object.fromEntries(
       Object.entries(FIELDS).map(([field, v]) => [

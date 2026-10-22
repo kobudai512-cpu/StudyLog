@@ -65,6 +65,9 @@ export function configuredStore(): CacheStore {
   const namespace = createHash("sha256")
     .update(
       [
+        "v3-notion-goals-completion-time",
+        process.env.NOTION_GOALS_DATA_SOURCE_ID,
+        process.env.NOTION_GOALS_PROPERTY_IDS,
         process.env.NOTION_DATA_SOURCE_ID,
         process.env.NOTION_TOKEN,
         process.env.NOTION_PROPERTY_IDS,

@@ -1,9 +1,11 @@
 import type { Snapshot } from "./study";
 import type { Bindings } from "./notion-schema";
+import type { GoalBindings } from "./goals";
 
 export type CacheState = {
   snapshot?: Snapshot;
   bindings?: Bindings;
+  goalBindings?: GoalBindings;
   lastAttempt?: number;
   lastError?: string;
 };

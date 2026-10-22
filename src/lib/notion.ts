@@ -1,3 +1,9 @@
+import {
+  GOALS_SOURCE_ID,
+  resolveGoalBindings,
+  normalizeGoals,
+  type GoalBindings,
+} from "./goals";
 import { Client, LogLevel } from "@notionhq/client";
 import type { QueryDataSourceParameters } from "@notionhq/client/build/src/api-endpoints";
 import {
@@ -113,7 +119,12 @@ export async function queryAll(
 }
 export async function fetchNotion(
   saved?: Bindings,
-): Promise<{ snapshot: Snapshot; bindings: Bindings }> {
+  savedGoals?: GoalBindings,
+): Promise<{
+  snapshot: Snapshot;
+  bindings: Bindings;
+  goalBindings?: GoalBindings;
+}> {
   if (!process.env.NOTION_TOKEN)
     throw new Error(
       "Notion接続が未設定です。サーバーの環境変数を設定してください。",
@@ -144,13 +155,43 @@ export async function fetchNotion(
   const pages = await queryAll(
     (args) => notion.dataSources.query(args),
     sourceId,
-    Object.values(bindings),
+    Object.values(bindings).filter(Boolean),
   );
+  let goalData: Pick<Snapshot, "goals" | "goalIssues" | "goalError">;
+  let goalBindings: GoalBindings | undefined;
+  try {
+    const goalSourceId =
+      process.env.NOTION_GOALS_DATA_SOURCE_ID || GOALS_SOURCE_ID;
+    const goalSource = await notion.dataSources.retrieve({
+      data_source_id: goalSourceId,
+    });
+    if (!("properties" in goalSource)) throw new Error();
+    goalBindings = resolveGoalBindings(
+      goalSource.properties as Record<string, SchemaProperty>,
+      savedGoals,
+      process.env.NOTION_GOALS_PROPERTY_IDS
+        ? JSON.parse(process.env.NOTION_GOALS_PROPERTY_IDS)
+        : undefined,
+    );
+    const goalPages = await queryAll(
+      (args) => notion.dataSources.query(args),
+      goalSourceId,
+      Object.values(goalBindings),
+    );
+    goalData = normalizeGoals(goalPages, goalBindings);
+  } catch {
+    goalData = {
+      goalError:
+        "週の目標を同期できません。Notionの読み取り接続・プロパティ対応を確認し、更新してください。",
+    };
+  }
   return {
     snapshot: {
       ...normalizePages(pages, bindings),
+      ...goalData,
       syncedAt: new Date().toISOString(),
     },
     bindings,
+    goalBindings,
   };
 }

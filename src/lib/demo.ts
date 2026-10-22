@@ -27,7 +27,6 @@ export function demoSnapshot(now = new Date()): Snapshot {
         durationMinutes: duration,
         ...(j === 0 || i % 2 === 0
           ? {
-              startedAt,
               endedAt: new Date(
                 Date.parse(startedAt) + duration * 60000,
               ).toISOString(),
@@ -38,5 +37,19 @@ export function demoSnapshot(now = new Date()): Snapshot {
       });
     }
   }
-  return { records, issues: [], duplicates: 0, syncedAt: now.toISOString() };
+  const goals = Array.from({ length: 9 }, (_, i) => ({
+    id: `demo-goal-${i}`,
+    weekStart: addDays(monday(today), -7 * i),
+    targetMinutes: 600 + i * 30,
+    notionUrl: "",
+    memo: "架空の週間目標",
+  }));
+  return {
+    records,
+    issues: [],
+    goals,
+    goalIssues: [],
+    duplicates: 0,
+    syncedAt: now.toISOString(),
+  };
 }

@@ -9,13 +9,24 @@ export type StudyRecord = {
   updatedAt: string;
   startedAt?: string;
   endedAt?: string;
+  recordedDurationMinutes?: number;
 };
-export type DataIssue = { id: string; reason: string };
+export type WeeklyStudyGoal = {
+  id: string;
+  weekStart: string;
+  targetMinutes: number | null;
+  notionUrl: string;
+  memo?: string;
+};
+export type DataIssue = { id: string; reason: string; weekStart?: string };
 export type Snapshot = {
   records: StudyRecord[];
   issues: DataIssue[];
   duplicates: number;
   syncedAt: string;
+  goals?: WeeklyStudyGoal[];
+  goalIssues?: DataIssue[];
+  goalError?: string;
 };
 export type StudyResponse = Snapshot & {
   mode: "demo" | "live";
@@ -119,6 +130,43 @@ export function uniqueRecords(records: StudyRecord[]) {
       map.set(r.id, r);
   return [...map.values()];
 }
+// The Notion date's timestamp is the completion time, never the creation time.
+export function estimatedInterval(record: StudyRecord) {
+  const value = record.endedAt;
+  if (
+    !value?.includes("T") ||
+    !studyDate(value) ||
+    !Number.isFinite(record.durationMinutes) ||
+    record.durationMinutes < 0
+  )
+    return null;
+  const end = Date.parse(value);
+  const start = end - record.durationMinutes * 60000;
+  if (!Number.isFinite(start) || !Number.isFinite(new Date(start).getTime()))
+    return null;
+  return { start, end };
+}
+function recordDays(record: StudyRecord, range: Range) {
+  const interval = estimatedInterval(record);
+  if (!interval)
+    return record.date >= range.start && record.date <= range.end
+      ? [{ date: record.date, minutes: record.durationMinutes }]
+      : [];
+  if (record.durationMinutes === 0)
+    return record.date >= range.start && record.date <= range.end
+      ? [{ date: record.date, minutes: 0 }]
+      : [];
+  return daysInRange(range).flatMap((date) => {
+    const left = Date.parse(`${date}T00:00:00+09:00`);
+    const minutes =
+      Math.max(
+        0,
+        Math.min(interval.end, left + 86400000) -
+          Math.max(interval.start, left),
+      ) / 60000;
+    return minutes > 0 ? [{ date, minutes }] : [];
+  });
+}
 export function aggregate(
   records: StudyRecord[],
   range: Range,
@@ -130,34 +178,36 @@ export function aggregate(
       validDate(r.date) &&
       Number.isFinite(r.durationMinutes) &&
       r.durationMinutes >= 0 &&
-      r.date >= range.start &&
-      r.date <= range.end &&
+      recordDays(r, range).length > 0 &&
       (subject === "all" || r.subject === subject),
   );
   const subjects = [...new Set(filtered.map((r) => r.subject))].sort();
-  const total = filtered.reduce((sum, r) => sum + r.durationMinutes, 0);
+  const portions = filtered.flatMap((r) =>
+    recordDays(r, range).map((d) => ({ ...d, record: r })),
+  );
+  const total = portions.reduce((sum, r) => sum + r.minutes, 0);
   const daily = days.map((date) => {
-    const entries = filtered.filter((r) => r.date === date);
+    const entries = portions.filter((r) => r.date === date);
     return {
       date,
       label: `${Number(date.slice(5, 7))}/${Number(date.slice(8))}`,
       recorded: entries.length > 0,
-      total: entries.reduce((sum, r) => sum + r.durationMinutes, 0),
+      total: entries.reduce((sum, r) => sum + r.minutes, 0),
       ...Object.fromEntries(
         subjects.map((s) => [
           s,
           entries
-            .filter((r) => r.subject === s)
-            .reduce((sum, r) => sum + r.durationMinutes, 0),
+            .filter((r) => r.record.subject === s)
+            .reduce((sum, r) => sum + r.minutes, 0),
         ]),
       ),
     };
   });
   const breakdown = subjects
     .map((name) => {
-      const minutes = filtered
-        .filter((r) => r.subject === name)
-        .reduce((sum, r) => sum + r.durationMinutes, 0);
+      const minutes = portions
+        .filter((r) => r.record.subject === name)
+        .reduce((sum, r) => sum + r.minutes, 0);
       return {
         name,
         minutes,
@@ -184,10 +234,24 @@ export function aggregate(
     daily,
     breakdown,
     weekly: [...weekly.values()],
-    records: filtered.sort(
-      (a, b) =>
-        b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt),
-    ),
+    records: filtered
+      .map((r) => {
+        const minutes = portions
+          .filter((p) => p.record.id === r.id)
+          .reduce((sum, p) => sum + p.minutes, 0);
+        return minutes === r.durationMinutes
+          ? r
+          : {
+              ...r,
+              durationMinutes: minutes,
+              recordedDurationMinutes: r.durationMinutes,
+            };
+      })
+      .sort(
+        (a, b) =>
+          b.date.localeCompare(a.date) ||
+          b.updatedAt.localeCompare(a.updatedAt),
+      ),
   };
 }
 export function weekComparison(

@@ -3,7 +3,9 @@ import {
   aggregate,
   daysInRange,
   monday,
-  studyDate,
+  estimatedInterval,
+  uniqueRecords,
+  validDate,
   type StudyRecord,
 } from "./study";
 
@@ -50,8 +52,7 @@ export function goalProgress(actual: number, target: number) {
   };
 }
 
-// Only place minutes on a clock when both endpoints and the actual duration agree.
-// Breaks / mismatched durations cannot safely be assigned to particular hours.
+// Inferred continuous study interval: completion timestamp minus actual minutes.
 export function hourlyStudy(
   records: StudyRecord[],
   date: string,
@@ -67,29 +68,34 @@ export function hourlyStudy(
   }));
   let unknownMinutes = 0;
   let unknownRecords = 0;
-  for (const r of summary.records) {
-    const start = Date.parse(r.startedAt ?? "");
-    const end = Date.parse(r.endedAt ?? "");
-    const timed =
-      r.startedAt?.includes("T") &&
-      r.endedAt?.includes("T") &&
-      studyDate(r.startedAt) === date &&
-      studyDate(r.endedAt) === date &&
-      end > start &&
-      Math.abs((end - start) / 60000 - r.durationMinutes) < 0.00001;
-    if (!timed) {
-      unknownMinutes += r.durationMinutes;
-      unknownRecords++;
+  const midnight = Date.parse(`${date}T00:00:00+09:00`);
+  for (const r of uniqueRecords(records)) {
+    if (
+      !validDate(r.date) ||
+      !Number.isFinite(r.durationMinutes) ||
+      r.durationMinutes < 0 ||
+      (subject !== "all" && r.subject !== subject)
+    )
+      continue;
+    const interval = estimatedInterval(r);
+    if (!interval) {
+      if (r.date === date) {
+        unknownMinutes += r.durationMinutes;
+        unknownRecords++;
+      }
       continue;
     }
-    const midnight = Date.parse(`${date}T00:00:00+09:00`);
     for (const row of hours) {
       const left = midnight + row.hour * 3600000;
       const minutes =
-        Math.max(0, Math.min(end, left + 3600000) - Math.max(start, left)) /
-        60000;
+        Math.max(
+          0,
+          Math.min(interval.end, left + 3600000) -
+            Math.max(interval.start, left),
+        ) / 60000;
+      if (minutes === 0) continue;
       row.total += minutes;
-      row.subjects[r.subject] += minutes;
+      row.subjects[r.subject] = (row.subjects[r.subject] || 0) + minutes;
     }
   }
   return {

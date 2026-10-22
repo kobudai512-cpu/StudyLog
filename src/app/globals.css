@@ -1638,6 +1638,12 @@ footer > span:first-child {
   color: #536758;
   margin: 10px 0 0;
 }
+.range-time {
+  display: block;
+  font-size: 10px;
+  color: #738175;
+  line-height: 1.6;
+}
 .calendar-navigation {
   padding: 0 26px 18px;
   font-size: 15px;

@@ -28,6 +28,7 @@ export function resolveBindings(
       const property = id
         ? entries.find((p) => p.id === id)
         : entries.find((p) => p.name === field.name);
+      if (key === "unit" && !property && !overrides?.unit) return [key, ""];
       if (!property || property.type !== field.type)
         throw new Error(
           `Notionの「${field.name}」の型またはIDが一致しません。プロパティ対応を確認してください。`,
@@ -77,7 +78,8 @@ export function normalizePages(
     const get = (field: Field) =>
       Object.values(page.properties).find((p) => p.id === bindings[field]);
     const invalidType = (Object.keys(FIELDS) as Field[]).find(
-      (f) => get(f)?.type !== FIELDS[f].type,
+      (f) =>
+        !(f === "unit" && !bindings.unit) && get(f)?.type !== FIELDS[f].type,
     );
     if (invalidType) {
       issues.push({
@@ -128,8 +130,10 @@ export function normalizePages(
       durationMinutes: duration,
       notionUrl: page.url,
       updatedAt: page.last_edited_time,
-      ...(start?.includes("T") && studyDate(start) ? { startedAt: start } : {}),
-      ...(end?.includes("T") && studyDate(end) ? { endedAt: end } : {}),
+      // A single timestamp is the completion time. A same-day legacy range uses its end.
+      ...((end || start)?.includes("T") && studyDate(end || start)
+        ? { endedAt: (end || start)! }
+        : {}),
     });
   }
   return { records, issues, duplicates: pages.length - unique.size };

@@ -160,9 +160,23 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
         : null,
     [records, today, weekOffset, subject],
   );
+  const goalWeekStart = today
+    ? period === "week"
+      ? shiftedWeek(today, weekOffset).start
+      : periodRange("week", range.start).start
+    : "";
   const allWeek = useMemo(
-    () => (today ? weekComparison(records, today).current : null),
-    [records, today],
+    () =>
+      today
+        ? aggregate(records, {
+            start: goalWeekStart,
+            end:
+              goalWeekStart === periodRange("week", today).start
+                ? today
+                : addDays(goalWeekStart, 6),
+          })
+        : null,
+    [records, today, goalWeekStart],
   );
   const displayedWeek = period === "week" ? selectedWeek : week;
   const isPastWeek = period === "week" && weekOffset < 0;
@@ -579,8 +593,8 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   </section>
                   <WeeklyGoal
                     total={allWeek.total}
-                    mode={mode}
-                    weekStart={periodRange("week", today).start}
+                    data={data}
+                    weekStart={goalWeekStart}
                   />
                   <div className="section-heading">
                     <div>
@@ -989,6 +1003,13 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                                 </td>
                                 <td className="record-time">
                                   {minutesLabel(r.durationMinutes)}
+                                  {r.recordedDurationMinutes !== undefined && (
+                                    <small className="range-time">
+                                      期間内（元の記録：
+                                      {minutesLabel(r.recordedDurationMinutes)}
+                                      ）
+                                    </small>
+                                  )}
                                 </td>
                                 <td>
                                   {r.notionUrl ? (
