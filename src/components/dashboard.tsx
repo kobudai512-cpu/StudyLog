@@ -605,6 +605,21 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                     total={allWeek.total}
                     data={data}
                     weekStart={goalWeekStart}
+                    onSaved={(goal) => {
+                      setData((current) =>
+                        current
+                          ? {
+                              ...current,
+                              goals: [
+                                ...(current.goals ?? []).filter(
+                                  (g) => g.weekStart !== goal.weekStart,
+                                ),
+                                goal,
+                              ],
+                            }
+                          : current,
+                      );
+                    }}
                   />
                   <div className="section-heading">
                     <div>

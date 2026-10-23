@@ -1882,6 +1882,175 @@ footer > span:first-child {
   gap: 18px;
   line-height: 1.8;
 }
+.duration-field {
+  display: grid;
+  gap: 10px;
+  font-size: 12px;
+  min-width: 0;
+}
+.duration-inputs {
+  display: flex;
+  gap: 14px;
+}
+.record-dialog .duration-inputs label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  grid-column: auto;
+}
+.duration-inputs input {
+  width: 100%;
+}
+.duration-inputs span {
+  white-space: nowrap;
+  color: #728178;
+}
+.goal-dialog fieldset {
+  display: block;
+}
+.goal-form-note {
+  color: #728178;
+  line-height: 1.8;
+  margin-bottom: 22px;
+}
+.goal-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 18px;
+}
+.goal-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: #35795a;
+  color: white;
+  box-shadow: 0 5px 14px #35795a20;
+}
+.goal-sync-help {
+  margin-top: 18px;
+  font-size: 11px;
+  color: #728178;
+  line-height: 1.9;
+}
+.goal-sync-help summary {
+  cursor: pointer;
+}
+.goal-sync-help p {
+  max-width: 680px;
+  margin-top: 8px;
+}
+.goal-panel {
+  background: linear-gradient(125deg, #f1f8ef, #fffdf7 75%);
+  border-color: #dae8d9;
+}
+.panel {
+  box-shadow: 0 4px 20px #344b3b04;
+}
+.stat-card.featured {
+  background-image: radial-gradient(
+    ellipse at top right,
+    #e4f0d5,
+    transparent 65%
+  );
+}
+.record-shortcut {
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #edf5e8;
+  box-shadow: 0 3px 9px #35795a0b;
+}
+button,
+.record-shortcut {
+  transition:
+    transform 160ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+button:not(:disabled):active,
+a.record-shortcut:active {
+  transform: scale(0.96);
+}
+@media (hover: hover) {
+  .primary:not(:disabled):hover,
+  .record-shortcut:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 18px #35795a25;
+  }
+  .calendar-day:not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+}
+.record-shortcut:active svg,
+.goal-edit:active svg {
+  animation: button-wiggle 300ms ease;
+}
+.record-dialog[open] {
+  animation: dialog-arrive 220ms ease-out;
+}
+.success-badge {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: #35795a;
+  background: #e7f3df;
+  animation: success-bloom 420ms ease-out;
+}
+.record-success {
+  animation: dialog-arrive 250ms ease-out;
+}
+.goal-result progress {
+  transition: all 400ms ease;
+  accent-color: #4c8d61;
+}
+@keyframes button-wiggle {
+  50% {
+    transform: rotate(-12deg) scale(1.12);
+  }
+}
+@keyframes dialog-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes success-bloom {
+  0% {
+    transform: scale(0.65);
+    box-shadow: 0 0 0 0 #89bca160;
+  }
+  65% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 12px #89bca100;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  button:not(:disabled):active,
+  a.record-shortcut:active {
+    transform: none;
+  }
+}
 @media (max-width: 680px) {
   .record-dialog {
     padding: 18px;

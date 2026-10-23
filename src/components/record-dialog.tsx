@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { ExternalLink, Plus, X } from "lucide-react";
+import DurationInput from "./duration-input";
 import { STUDY_LOG_URL } from "@/lib/study-features";
 import {
   estimatedInterval,
@@ -30,7 +31,9 @@ export default function RecordDialog({
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [endedAt, setEndedAt] = useState("");
-  const [duration, setDuration] = useState("");
+  const [hours, setHours] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const duration = Number(hours) * 60 + Number(minutes);
   const [unit, setUnit] = useState("");
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -136,7 +139,8 @@ export default function RecordDialog({
               onClick={() => {
                 setSaved(null);
                 setTitle("");
-                setDuration("");
+                setHours("");
+                setMinutes("");
                 setUnit("");
                 setEndedAt(tokyoDateTimeInput());
                 requestId.current = "";
@@ -277,20 +281,14 @@ export default function RecordDialog({
                   onChange={(e) => setEndedAt(e.target.value)}
                 />
               </label>
-              <label>
-                実績時間（分）
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  max={1440}
-                  step={1}
-                  inputMode="numeric"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="例：31"
-                />
-              </label>
+              <DurationInput
+                label="実績時間"
+                hours={hours}
+                minutes={minutes}
+                onHours={setHours}
+                onMinutes={setMinutes}
+                maxHours={24}
+              />
               {options?.hasUnit && (
                 <label>
                   単元（任意）

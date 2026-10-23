@@ -10,7 +10,7 @@ test("Notion目標の表示・週移動・カレンダーから1日と時間帯�
     page.getByRole("button", { name: "記録する", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".reflection-flower")).toHaveCount(0);
-  await expect(page.getByText("Notionと同期", { exact: true })).toBeVisible();
+  await expect(page.getByText("デモの目標", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("progressbar", { name: "週の目標達成率" }),
   ).toBeVisible();
@@ -114,12 +114,14 @@ test("デモ・フィルター・状態・更新とレスポンシブ表示", as
   await page.screenshot({
     path: `test-results/${testInfo.project.name}-dashboard.png`,
     fullPage: true,
+    animations: "disabled",
   });
 });
 test("未認証アクセスは実データを返さない", async ({ request, page }) => {
   expect((await request.get("/api/study")).status()).toBe(401);
   expect((await request.get("/api/records")).status()).toBe(401);
   expect((await request.post("/api/records", { data: {} })).status()).toBe(401);
+  expect((await request.post("/api/goals", { data: {} })).status()).toBe(401);
   expect(
     (
       await request.post("/api/study", {
@@ -150,8 +152,9 @@ test("記録ポップアップ・推定プレビュー・デモ保存・閉じ�
   await dialog
     .getByLabel("終了日時（日本時間）", { exact: true })
     .fill("2026-10-22T02:31");
+  await dialog.getByLabel("実績時間（時間）", { exact: true }).fill("1");
   await dialog.getByLabel("実績時間（分）", { exact: true }).fill("31");
-  await expect(dialog.locator(".record-preview")).toContainText("02:00");
+  await expect(dialog.locator(".record-preview")).toContainText("01:00");
   await expect(dialog.locator(".record-preview")).toContainText("02:31");
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
@@ -166,6 +169,7 @@ test("記録ポップアップ・推定プレビュー・デモ保存・閉じ�
   ).toBe(true);
   await page.screenshot({
     path: `test-results/${testInfo.project.name}-record-dialog.png`,
+    animations: "disabled",
   });
   await dialog.getByRole("button", { name: "デモに追加", exact: true }).click();
   await expect(
@@ -176,4 +180,28 @@ test("記録ポップアップ・推定プレビュー・デモ保存・閉じ�
     "GUIからの架空の記録",
   );
   expect(errors).toEqual([]);
+});
+
+test("目標を時間と分で設定し、週ごとに保持する", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByRole("button", { name: "目標を変更", exact: true }).click();
+  const dialog = page.getByRole("dialog", {
+    name: "週の目標を設定",
+    exact: true,
+  });
+  await dialog.getByLabel("目標時間（時間）", { exact: true }).fill("12");
+  await dialog.getByLabel("目標時間（分）", { exact: true }).fill("30");
+  await dialog.getByRole("button", { name: "デモの目標を保存" }).click();
+  await expect(dialog.getByText("デモの目標を更新しました")).toBeVisible();
+  await dialog.getByRole("button", { name: "閉じる", exact: true }).click();
+  await expect(page.locator(".goal-result")).toContainText("12時間 30分");
+  await page.getByRole("button", { name: "前の週", exact: true }).click();
+  await expect(page.locator(".goal-result")).not.toContainText("12時間 30分");
+  await page.getByRole("button", { name: "次の週", exact: true }).click();
+  await expect(page.locator(".goal-result")).toContainText("12時間 30分");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

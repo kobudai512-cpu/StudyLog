@@ -25,7 +25,9 @@ export function resolveGoalBindings(
         overrides?.[key as keyof GoalBindings] ||
         saved?.[key as keyof GoalBindings];
       const property = Object.values(properties).find((p) =>
-        id ? p.id === id : p.name === field.name,
+        id
+          ? p.id === id
+          : p.name === field.name || (key === "memo" && p.name === "テキスト"),
       );
       if (!property || property.type !== field.type)
         throw new Error("週の目標のプロパティ対応を確認してください。");

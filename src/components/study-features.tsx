@@ -22,15 +22,19 @@ import {
 } from "@/lib/study-features";
 
 import { GOALS_URL } from "@/lib/goals";
+import GoalDialog from "./goal-dialog";
+import type { WeeklyStudyGoal } from "@/lib/study";
 
 export function WeeklyGoal({
   total,
   weekStart,
   data,
+  onSaved,
 }: {
   total: number;
   weekStart: string;
   data: StudyResponse;
+  onSaved: (goal: WeeklyStudyGoal) => void;
 }) {
   const matches = (data.goals ?? []).filter((g) => g.weekStart === weekStart);
   const issues = (data.goalIssues ?? []).filter(
@@ -50,7 +54,9 @@ export function WeeklyGoal({
           </h3>
           <p>{weekStart}からの週・すべての教科</p>
         </div>
-        <span className="unit-tag">Notionと同期</span>
+        <span className="unit-tag">
+          {data.mode === "demo" ? "デモの目標" : "Notionと同期"}
+        </span>
       </div>
       <div className="goal-body">
         {data.goalError ? (
@@ -84,7 +90,7 @@ export function WeeklyGoal({
           </div>
         ) : (
           <p className="muted">
-            この週の目標は未設定です。Notionの「週の目標」で月曜日の日付と目標時間（分）を入力してください。
+            この週は、どれくらい勉強しよう？時間と分で目標を設定できます。
           </p>
         )}
         {data.stale && (
@@ -92,21 +98,41 @@ export function WeeklyGoal({
             前回成功時の目標・実績を表示しています。
           </p>
         )}
-        {data.mode === "live" ? (
-          <a
-            className="record-shortcut"
-            href={goal?.notionUrl || GOALS_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <ExternalLink size={15} />
-            Notionで目標を設定
-          </a>
-        ) : (
-          <p className="goal-message">
-            デモの目標も架空データです。実際の目標はNotionで設定します。
+        <div className="goal-actions">
+          <GoalDialog
+            key={weekStart}
+            mode={data.mode}
+            weekStart={weekStart}
+            goal={goal}
+            disabled={
+              Boolean(data.goalError) || matches.length > 1 || issues.length > 0
+            }
+            onSaved={onSaved}
+          />
+          {data.mode === "live" ? (
+            <a
+              className="record-shortcut"
+              href={goal?.notionUrl || GOALS_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink size={15} />
+              Notionで確認
+            </a>
+          ) : (
+            <p className="goal-message">
+              デモ内でお試しできます。Notionへの保存は本番画面から。
+            </p>
+          )}
+        </div>
+        <details className="goal-sync-help">
+          <summary>Notionの目標が反映されないときは</summary>
+          <p>
+            {data.mode === "demo"
+              ? "この画面はデモのため、Notionの変更は反映されません。本番画面でログインしてください。"
+              : "Notionで直接変更した目標は、最大5分後の自動取得か「更新」ボタンで読み込みます。週の開始日は表示中の週の月曜日を指定し、同じ週の目標は1件にしてください。"}
           </p>
-        )}
+        </details>
       </div>
     </section>
   );
