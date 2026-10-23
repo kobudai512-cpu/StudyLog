@@ -5,7 +5,11 @@ const LEASE_MS = 60000;
 const RETENTION_SECONDS = 7 * 24 * 60 * 60;
 export const CACHE_SCRIPTS = {
   write: `if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
+if tonumber(ARGV[3]) > 0 then
 redis.call('SET', KEYS[2], ARGV[2], 'EX', ARGV[3])
+else
+redis.call('SET', KEYS[2], ARGV[2])
+end
 return 1`,
   renew: `if redis.call('GET', KEYS[1]) == ARGV[1] then
 return redis.call('PEXPIRE', KEYS[1], ARGV[2]) end
@@ -23,6 +27,7 @@ export class RedisStore implements CacheStore {
     private readonly token: string,
     private readonly prefix: string,
     private readonly request: typeof fetch = fetch,
+    private readonly retentionSeconds = RETENTION_SECONDS,
   ) {
     const endpoint = new URL(url);
     if (
@@ -111,7 +116,7 @@ export class RedisStore implements CacheStore {
           `${this.prefix}:state`,
           owner,
           JSON.stringify(state),
-          RETENTION_SECONDS,
+          this.retentionSeconds,
         ]);
         if (saved !== 1) {
           lost = true;

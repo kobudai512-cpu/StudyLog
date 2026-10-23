@@ -65,22 +65,30 @@ export class FileStore implements CacheStore {
 export function configuredStore(purpose = "sync"): CacheStore {
   const namespace = createHash("sha256")
     .update(
-      (purpose === "record-submissions"
+      (purpose === "sharing"
         ? [
             purpose,
+            "v1",
             process.env.NOTION_DATA_SOURCE_ID || SOURCE_ID,
-            process.env.VERCEL_ENV,
-          ]
-        : [
-            purpose,
-            "v3-notion-goals-completion-time",
             process.env.NOTION_GOALS_DATA_SOURCE_ID,
-            process.env.NOTION_GOALS_PROPERTY_IDS,
-            process.env.NOTION_DATA_SOURCE_ID,
-            process.env.NOTION_TOKEN,
-            process.env.NOTION_PROPERTY_IDS,
             process.env.VERCEL_ENV,
           ]
+        : purpose === "record-submissions"
+          ? [
+              purpose,
+              process.env.NOTION_DATA_SOURCE_ID || SOURCE_ID,
+              process.env.VERCEL_ENV,
+            ]
+          : [
+              purpose,
+              "v3-notion-goals-completion-time",
+              process.env.NOTION_GOALS_DATA_SOURCE_ID,
+              process.env.NOTION_GOALS_PROPERTY_IDS,
+              process.env.NOTION_DATA_SOURCE_ID,
+              process.env.NOTION_TOKEN,
+              process.env.NOTION_PROPERTY_IDS,
+              process.env.VERCEL_ENV,
+            ]
       ).join(":"),
     )
     .digest("hex")
@@ -90,7 +98,13 @@ export function configuredStore(purpose = "sync"): CacheStore {
   const redisToken =
     process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
   if (redisUrl && redisToken)
-    return new RedisStore(redisUrl, redisToken, `winkle:${namespace}`);
+    return new RedisStore(
+      redisUrl,
+      redisToken,
+      `winkle:${namespace}`,
+      fetch,
+      purpose === "sharing" ? 0 : 604800,
+    );
   if (redisUrl || redisToken || process.env.VERCEL === "1")
     throw new Error("共有キャッシュのREST URLとトークンを設定してください。");
   if (process.env.NODE_ENV === "production" && !process.env.CACHE_DIR)

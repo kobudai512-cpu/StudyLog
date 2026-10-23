@@ -36,6 +36,7 @@ import {
 import { HourlyChart, StudyCalendar, WeeklyGoal } from "./study-features";
 import { shiftedWeek } from "@/lib/study-features";
 import RecordDialog from "./record-dialog";
+import ShareDialog from "./share-dialog";
 import { demoSnapshot } from "@/lib/demo";
 import {
   addDays,
@@ -391,6 +392,9 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                 </div>
               </section>
               <div className="study-actions">
+                {(authenticated || mode === "demo") && (
+                  <ShareDialog demo={mode === "demo"} />
+                )}
                 {period === "week" && (
                   <div className="week-navigation" aria-label="週の移動">
                     <button

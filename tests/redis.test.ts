@@ -43,6 +43,39 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe("サーバーレスの共有キャッシュ", () => {
+  it("共有リンク設定は7日キャッシュと分け、期限なしで保持する", async () => {
+    const f = redisFixture();
+    const store = new RedisStore(
+      "https://redis.example.test",
+      "fixture",
+      "sharing",
+      f.request,
+      0,
+    );
+    const lease = await store.lock();
+    await lease!.write({
+      sharing: {
+        tokenHash: "fixture",
+        sealedToken: "encrypted",
+        createdAt: "2026-10-24",
+      },
+    });
+    const commands = f.request.mock.calls.map(([, options]) =>
+      JSON.parse(String(options?.body)),
+    );
+    expect(commands).toContainEqual([
+      "EVAL",
+      CACHE_SCRIPTS.write,
+      2,
+      "sharing:lock",
+      "sharing:state",
+      expect.any(String),
+      expect.any(String),
+      0,
+    ]);
+    await lease!();
+    expect((await store.read()).sharing?.sealedToken).toBe("encrypted");
+  });
   it("別ワーカーと状態を共有し、同時同期は1件にする", async () => {
     const f = redisFixture();
     const a = await f.store().lock();
@@ -99,23 +132,21 @@ describe("サーバーレスの共有キャッシュ", () => {
   });
   it("別インスタンスからの更新にも30秒制限を適用する", async () => {
     const f = redisFixture();
-    const load = vi
-      .fn()
-      .mockResolvedValue({
-        snapshot: {
-          records: [],
-          issues: [],
-          duplicates: 0,
-          syncedAt: new Date().toISOString(),
-        },
-        bindings: {
-          title: "t",
-          date: "d",
-          subject: "s",
-          duration: "m",
-          unit: "u",
-        },
-      });
+    const load = vi.fn().mockResolvedValue({
+      snapshot: {
+        records: [],
+        issues: [],
+        duplicates: 0,
+        syncedAt: new Date().toISOString(),
+      },
+      bindings: {
+        title: "t",
+        date: "d",
+        subject: "s",
+        duration: "m",
+        unit: "u",
+      },
+    });
     await synchronize(false, f.store(), load);
     await synchronize(false, f.store(), load);
     expect(load).toHaveBeenCalledTimes(1);
