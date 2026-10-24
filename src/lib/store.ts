@@ -81,7 +81,9 @@ export function configuredStore(purpose = "sync"): CacheStore {
             ]
           : [
               purpose,
-              "v3-notion-goals-completion-time",
+              purpose === "sync"
+                ? "v4-materials"
+                : "v3-notion-goals-completion-time",
               process.env.NOTION_GOALS_DATA_SOURCE_ID,
               process.env.NOTION_GOALS_PROPERTY_IDS,
               process.env.NOTION_DATA_SOURCE_ID,

@@ -98,6 +98,10 @@ export async function submitRecord(
       );
     if (input.unit && !schema.hasUnit)
       throw new RecordError("単元を空にして保存してください。");
+    if (input.material && !schema.bindings.material)
+      throw new RecordError(
+        "Notionの教材プロパティを確認し、フォームを開き直してください。",
+      );
     const pending = { hash, status: "pending" as const, at: Date.now() };
     submissions[key] = pending;
     state.submissions = submissions;

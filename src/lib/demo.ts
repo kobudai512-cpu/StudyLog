@@ -22,6 +22,16 @@ export function demoSnapshot(now = new Date()): Snapshot {
         id: `demo-${i}-${j}`,
         date: addDays(start, i),
         subject: subjects[s],
+        material:
+          i % 6 === 0
+            ? ""
+            : [
+                `数学の参考書（デモ）`,
+                `英語の単語帳（デモ）`,
+                `化学の問題集（デモ）`,
+                `物理の問題集（デモ）`,
+                `国語の問題集（デモ）`,
+              ][s],
         unit: ["第3章", "演習ノート", "基礎の確認"][j],
         title: titles[s],
         durationMinutes: duration,

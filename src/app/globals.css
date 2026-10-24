@@ -66,6 +66,131 @@ summary:focus-visible {
   outline: 2px solid #89bca1;
   outline-offset: 3px;
 }
+.material-filter select {
+  max-width: 220px;
+}
+.toolbar-right {
+  flex-wrap: wrap;
+}
+.material-filter-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #edf5e8;
+  color: #527346;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.material-panel {
+  margin: 24px 0;
+}
+.material-panel .table-scroll {
+  max-height: none;
+}
+.material-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.material-panel .panel-heading {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.material-panel label,
+.record-sort {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: #728178;
+}
+.material-panel select,
+.record-sort select {
+  max-width: 210px;
+  min-width: 0;
+  border: 1px solid #dce6de;
+  border-radius: 8px;
+  padding: 8px;
+  background: white;
+  color: #344b3b;
+}
+.material-table {
+  width: 100%;
+  min-width: 700px;
+  font-size: 12px;
+  text-align: left;
+  border-collapse: collapse;
+}
+.material-table th {
+  font-weight: 500;
+  color: #849087;
+  background: #f8faf7;
+}
+.material-table th,
+.material-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #edf0ed;
+  white-space: nowrap;
+}
+.material-table button {
+  background: transparent;
+  color: #35795a;
+  text-align: left;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.material-table button:hover {
+  text-decoration: underline;
+}
+.material-share-track {
+  height: 4px;
+  background: #edf2e9;
+  border-radius: 4px;
+  margin-top: 8px;
+  max-width: 160px;
+}
+.material-share-track span {
+  display: block;
+  height: 100%;
+  background: #83a26b;
+  border-radius: inherit;
+}
+.material-table small {
+  color: #849087;
+  font-size: 10px;
+}
+.material-note {
+  padding: 14px 24px;
+  font-size: 11px;
+  color: #849087;
+  line-height: 1.9;
+}
+.record-material {
+  display: block;
+  color: #527346;
+  font-size: 11px;
+  margin-top: 4px;
+}
+@media (max-width: 680px) {
+  .material-filter select {
+    max-width: 170px;
+  }
+  .material-panel .panel-heading {
+    padding: 18px;
+  }
+  .material-note {
+    padding: 12px 18px;
+  }
+  .records-panel .panel-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
 button {
   border: 0;
 }

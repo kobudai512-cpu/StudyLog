@@ -11,6 +11,42 @@ vi.mock("@notionhq/client", () => ({
 }));
 import { createNotionRecord } from "@/lib/notion-write";
 import { NOTION_VERSION } from "@/lib/notion-schema";
+it("新しい教材名をselectとして記録と同時に保存する", async () => {
+  sdk.create.mockResolvedValue({ id: "page", url: "https://notion.so/page" });
+  await createNotionRecord(
+    {
+      title: "演習",
+      subject: "数学",
+      endedAt: "2026-10-24T00:00:00Z",
+      durationMinutes: 60,
+      unit: "",
+      material: "新しい参考書",
+    },
+    {
+      enabled: true,
+      subjects: ["数学"],
+      subjectIds: { 数学: "math" },
+      hasUnit: false,
+      hasMaterial: true,
+      materials: [],
+      bindings: {
+        title: "t",
+        date: "d",
+        subject: "s",
+        duration: "m",
+        unit: "",
+        material: "b",
+      },
+    },
+  );
+  expect(sdk.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      properties: expect.objectContaining({
+        b: { select: { name: "新しい参考書" } },
+      }),
+    }),
+  );
+});
 afterEach(() => {
   vi.clearAllMocks();
   vi.unstubAllEnvs();

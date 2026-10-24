@@ -47,7 +47,15 @@ export async function recordSchema(): Promise<
   );
   if (!subject || subject.type !== "select")
     throw new RecordError("教科の設定を確認してください。", 503);
+  const material = Object.values(source.properties).find(
+    (p) => p.id === bindings.material,
+  );
   return {
+    hasMaterial: material?.type === "select",
+    materials:
+      material?.type === "select"
+        ? material.select.options.map((o) => o.name)
+        : [],
     enabled: writingEnabled(),
     subjects: subject.select.options.map((o) => o.name),
     subjectIds: Object.fromEntries(
@@ -68,12 +76,17 @@ export async function createNotionRecord(
       "Notionに単元の項目がありません。単元を空にして保存してください。",
     );
   const b = schema.bindings;
+  if (input.material && !b.material)
+    throw new RecordError("Notionの教材プロパティを確認してください。", 503);
   const page = await client().pages.create({
     parent: {
       type: "data_source_id",
       data_source_id: process.env.NOTION_DATA_SOURCE_ID || SOURCE_ID,
     },
     properties: {
+      ...(b.material && input.material
+        ? { [b.material]: { select: { name: input.material } } }
+        : {}),
       [b.title]: { title: [{ text: { content: input.title } }] },
       [b.subject]: { select: { id: schema.subjectIds[input.subject] } },
       [b.date]: { date: { start: input.endedAt } },

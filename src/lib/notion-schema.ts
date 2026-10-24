@@ -11,10 +11,13 @@ export const FIELDS = {
   date: { name: "日付", type: "date" },
   subject: { name: "科目", type: "select" },
   duration: { name: "学習時間（分）", type: "number" },
+  material: { name: "教材", type: "select" },
   unit: { name: "単元", type: "rich_text" },
 } as const;
 export type Field = keyof typeof FIELDS;
-export type Bindings = Record<Field, string>;
+export type Bindings = Record<Exclude<Field, "material">, string> & {
+  material?: string;
+};
 export type SchemaProperty = { id: string; name: string; type: string };
 export function resolveBindings(
   properties: Record<string, SchemaProperty>,
@@ -23,17 +26,18 @@ export function resolveBindings(
 ): Bindings {
   const entries = Object.values(properties);
   return Object.fromEntries(
-    Object.entries(FIELDS).map(([key, field]) => {
+    Object.entries(FIELDS).flatMap(([key, field]) => {
       const id = overrides?.[key as Field] ?? saved?.[key as Field];
       const property = id
         ? entries.find((p) => p.id === id)
         : entries.find((p) => p.name === field.name);
-      if (key === "unit" && !property && !overrides?.unit) return [key, ""];
+      if (key === "material" && !property && !overrides?.material) return [];
+      if (key === "unit" && !property && !overrides?.unit) return [[key, ""]];
       if (!property || property.type !== field.type)
         throw new Error(
           `Notionの「${field.name}」の型またはIDが一致しません。プロパティ対応を確認してください。`,
         );
-      return [key, property.id];
+      return [[key, property.id]];
     }),
   ) as Bindings;
 }
@@ -79,7 +83,8 @@ export function normalizePages(
       Object.values(page.properties).find((p) => p.id === bindings[field]);
     const invalidType = (Object.keys(FIELDS) as Field[]).find(
       (f) =>
-        !(f === "unit" && !bindings.unit) && get(f)?.type !== FIELDS[f].type,
+        !((f === "unit" || f === "material") && !bindings[f]) &&
+        get(f)?.type !== FIELDS[f].type,
     );
     if (invalidType) {
       issues.push({
@@ -120,6 +125,9 @@ export function normalizePages(
       id: page.id,
       date,
       subject: get("subject")?.select?.name?.trim() || "未分類",
+      ...(bindings.material
+        ? { material: get("material")?.select?.name?.trim() || "" }
+        : {}),
       unit: get("unit")
         ?.rich_text?.map((t) => t.plain_text)
         .join(""),

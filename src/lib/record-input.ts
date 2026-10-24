@@ -2,6 +2,7 @@ import { studyDate, tokyoDate } from "./study";
 export type RecordInput = {
   title: string;
   subject: string;
+  material?: string;
   endedAt: string;
   durationMinutes: number;
   unit: string;
@@ -10,6 +11,8 @@ export type RecordOptions = {
   enabled: boolean;
   subjects: string[];
   hasUnit: boolean;
+  hasMaterial?: boolean;
+  materials?: string[];
 };
 export type CreatedRecord = { id: string; notionUrl: string };
 export class RecordError extends Error {
@@ -32,7 +35,14 @@ export function parseRecordInput(
   if (
     Object.keys(v).some(
       (k) =>
-        !["title", "subject", "endedAt", "durationMinutes", "unit"].includes(k),
+        ![
+          "title",
+          "subject",
+          "endedAt",
+          "durationMinutes",
+          "unit",
+          "material",
+        ].includes(k),
     )
   )
     throw new RecordError("未対応の項目が含まれています。");
@@ -66,7 +76,19 @@ export function parseRecordInput(
     (typeof v.unit !== "string" || v.unit.trim().length > 200)
   )
     throw new RecordError("単元は200文字以内で入力してください。");
+  if (
+    v.material !== undefined &&
+    (typeof v.material !== "string" ||
+      v.material.trim().length > 100 ||
+      v.material.includes(","))
+  )
+    throw new RecordError(
+      "教材名はカンマを含まない100文字以内で入力してください。",
+    );
   return {
+    ...(typeof v.material === "string" && v.material.trim()
+      ? { material: v.material.trim() }
+      : {}),
     title: v.title.trim(),
     subject: v.subject,
     endedAt: new Date(v.endedAt).toISOString(),

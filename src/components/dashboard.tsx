@@ -36,6 +36,8 @@ import {
 import { HourlyChart, StudyCalendar, WeeklyGoal } from "./study-features";
 import { shiftedWeek } from "@/lib/study-features";
 import RecordDialog from "./record-dialog";
+import MaterialRanking from "./material-ranking";
+import { filterMaterial } from "@/lib/materials";
 import ShareDialog from "./share-dialog";
 import { demoSnapshot } from "@/lib/demo";
 import {
@@ -66,6 +68,8 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [period, setPeriod] = useState<Period>("week");
+  const [material, setMaterial] = useState("all");
+  const [recordSort, setRecordSort] = useState("date-desc");
   const [subject, setSubject] = useState("all");
   const [today, setToday] = useState("");
   const [custom, setCustom] = useState({ start: "", end: "" });
@@ -120,10 +124,21 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
       clearInterval(timer);
     };
   }, [canRead, load]);
-  const records = useMemo(
+  const baseRecords = useMemo(
     () => (scenario === "empty" ? [] : (data?.records ?? [])),
     [data, scenario],
   );
+  const records = useMemo(
+    () => filterMaterial(baseRecords, material),
+    [baseRecords, material],
+  );
+  const materials = [
+    ...new Set(
+      (data?.records ?? [])
+        .map((r) => r.material)
+        .filter((m): m is string => Boolean(m)),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ja"));
   const subjects = useMemo(
     () => [...new Set((data?.records ?? []).map((r) => r.subject))].sort(),
     [data],
@@ -146,6 +161,17 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
         : null,
     [records, range.start, range.end, subject, today, rangeError],
   );
+  const orderedRecords = [...(summary?.records ?? [])].sort((a, b) =>
+    recordSort === "time-desc"
+      ? b.durationMinutes - a.durationMinutes || b.date.localeCompare(a.date)
+      : recordSort === "time-asc"
+        ? a.durationMinutes - b.durationMinutes || b.date.localeCompare(a.date)
+        : recordSort === "date-asc"
+          ? a.date.localeCompare(b.date) ||
+            a.updatedAt.localeCompare(b.updatedAt)
+          : b.date.localeCompare(a.date) ||
+            b.updatedAt.localeCompare(a.updatedAt),
+  );
   const week = useMemo(
     () => (today ? weekComparison(records, today, subject) : null),
     [records, today, subject],
@@ -165,7 +191,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
   const allWeek = useMemo(
     () =>
       today
-        ? aggregate(records, {
+        ? aggregate(baseRecords, {
             start: goalWeekStart,
             end:
               goalWeekStart === periodRange("week", today).start
@@ -173,7 +199,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                 : addDays(goalWeekStart, 6),
           })
         : null,
-    [records, today, goalWeekStart],
+    [baseRecords, today, goalWeekStart],
   );
   const displayedWeek = period === "week" ? selectedWeek : week;
   const isPastWeek = period === "week" && weekOffset < 0;
@@ -362,6 +388,25 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   ))}
                 </div>
                 <div className="toolbar-right">
+                  <label className="subject-select material-filter">
+                    <span>教材</span>
+                    <select
+                      aria-label="教材"
+                      value={material}
+                      onChange={(e) => {
+                        setMaterial(e.target.value);
+                        setPage(1);
+                      }}
+                    >
+                      <option value="all">すべての教材</option>
+                      <option value="unset">教材未設定</option>
+                      {materials.map((name) => (
+                        <option key={name} value={`book:${name}`}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <label className="subject-select">
                     <span>教科</span>
                     <select
@@ -478,6 +523,21 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                     />
                   </label>
                   <small>最大366日</small>
+                </div>
+              )}
+              {material !== "all" && (
+                <div className="material-filter-note">
+                  {material === "unset" ? "教材未設定" : material.slice(5)}{" "}
+                  の実績を表示中。週目標の達成率はすべての教材・教科で計算します。
+                  <button
+                    className="refresh-button"
+                    onClick={() => {
+                      setMaterial("all");
+                      setPage(1);
+                    }}
+                  >
+                    教材の絞り込みを解除
+                  </button>
                 </div>
               )}
               <div className="sync-line">
@@ -962,6 +1022,15 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                       </div>
                     </section>
                   </div>
+                  <MaterialRanking
+                    records={baseRecords}
+                    range={range}
+                    subject={subject}
+                    onSelect={(value) => {
+                      setMaterial(value);
+                      setPage(1);
+                    }}
+                  />
                   <StudyCalendar
                     records={records}
                     month={calendarMonth || today.slice(0, 7)}
@@ -988,7 +1057,22 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                         </h3>
                         <p>記録の原本はNotionに。ここでは、振り返りを。</p>
                       </div>
-                      <span className="unit-tag">学習日順</span>
+                      <label className="record-sort">
+                        並び順
+                        <select
+                          aria-label="記録の並び順"
+                          value={recordSort}
+                          onChange={(e) => {
+                            setRecordSort(e.target.value);
+                            setPage(1);
+                          }}
+                        >
+                          <option value="date-desc">日付が新しい順</option>
+                          <option value="date-asc">日付が古い順</option>
+                          <option value="time-desc">学習時間が多い順</option>
+                          <option value="time-asc">学習時間が少ない順</option>
+                        </select>
+                      </label>
                     </div>
                     <div className="record-table-wrap">
                       <table className="record-table">
@@ -1005,7 +1089,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                           </tr>
                         </thead>
                         <tbody>
-                          {summary.records
+                          {orderedRecords
                             .slice((page - 1) * 15, page * 15)
                             .map((r) => (
                               <tr key={r.id}>
@@ -1025,6 +1109,9 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                                 </td>
                                 <td className="record-title">
                                   <strong>{r.title}</strong>
+                                  <span className="record-material">
+                                    {r.material || "教材未設定"}
+                                  </span>
                                   {r.unit && <small>{r.unit}</small>}
                                 </td>
                                 <td className="record-time">

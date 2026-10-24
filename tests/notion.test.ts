@@ -7,12 +7,13 @@ import {
   type RawPage,
 } from "@/lib/notion-schema";
 import { queryAll, retryingFetch } from "@/lib/notion";
-const bindings: Bindings = {
+const bindings: Bindings & { material: string } = {
   title: "t",
   date: "d",
   subject: "s",
   duration: "m",
   unit: "u",
+  material: "b",
 };
 const makePage = (): RawPage => ({
   id: "one",
@@ -24,6 +25,7 @@ const makePage = (): RawPage => ({
     renamedSubject: { id: "s", type: "select", select: { name: "数学" } },
     renamedMinutes: { id: "m", type: "number", number: 90 },
     unit: { id: "u", type: "rich_text", rich_text: [] },
+    material: { id: "b", type: "select", select: null },
   },
 });
 describe("Notionスキーマと正規化", () => {

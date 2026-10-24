@@ -29,6 +29,7 @@ export default function RecordDialog({
   const sentPayload = useRef("");
   const [options, setOptions] = useState<RecordOptions | null>(null);
   const [title, setTitle] = useState("");
+  const [material, setMaterial] = useState("");
   const [subject, setSubject] = useState("");
   const [endedAt, setEndedAt] = useState("");
   const [hours, setHours] = useState("");
@@ -54,6 +55,12 @@ export default function RecordDialog({
           enabled: true,
           subjects: Object.keys(SUBJECT_COLORS).filter((s) => s !== "未分類"),
           hasUnit: true,
+          hasMaterial: true,
+          materials: [
+            "数学の参考書（デモ）",
+            "英語の単語帳（デモ）",
+            "物理の問題集（デモ）",
+          ],
         });
         return;
       }
@@ -142,6 +149,7 @@ export default function RecordDialog({
                 setHours("");
                 setMinutes("");
                 setUnit("");
+                setMaterial("");
                 setEndedAt(tokyoDateTimeInput());
                 requestId.current = "";
                 sentPayload.current = "";
@@ -162,6 +170,7 @@ export default function RecordDialog({
                 input = parseRecordInput({
                   title,
                   subject,
+                  material: options.hasMaterial ? material : "",
                   endedAt: `${endedAt}+09:00`,
                   durationMinutes: Number(duration),
                   unit: options.hasUnit ? unit : "",
@@ -184,6 +193,7 @@ export default function RecordDialog({
                     date: tokyoDate(input.endedAt),
                     title: input.title,
                     subject: input.subject,
+                    material: input.material,
                     unit: input.unit,
                     durationMinutes: input.durationMinutes,
                     endedAt: input.endedAt,
@@ -289,6 +299,27 @@ export default function RecordDialog({
                 onMinutes={setMinutes}
                 maxHours={24}
               />
+              {options?.hasMaterial && (
+                <label>
+                  教材（任意）
+                  <input
+                    aria-label="教材（任意）"
+                    list="record-material-options"
+                    maxLength={100}
+                    value={material}
+                    onChange={(e) => setMaterial(e.target.value)}
+                    placeholder="選択、または新しい教材名を入力"
+                  />
+                  <datalist id="record-material-options">
+                    {options.materials?.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
+                  <small>
+                    新しい教材名も、記録と一緒にNotionの選択肢へ保存します。
+                  </small>
+                </label>
+              )}
               {options?.hasUnit && (
                 <label>
                   単元（任意）

@@ -101,7 +101,12 @@ test("デモ・フィルター・状態・更新とレスポンシブ表示", as
   await page.getByLabel("デモの表示状態").selectOption("issues");
   await expect(page.getByRole("status")).toContainText("2件");
   await page.getByLabel("デモの表示状態").selectOption("empty");
-  await expect(page.getByText("この期間の記録はまだありません")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "この期間の記録はまだありません",
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.getByLabel("デモの表示状態").selectOption("normal");
   await expect(page.locator(".record-table tbody tr").first()).toBeVisible();
   expect(

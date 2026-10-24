@@ -2,6 +2,7 @@ export type StudyRecord = {
   id: string;
   date: string;
   subject: string;
+  material?: string;
   unit?: string;
   title: string;
   durationMinutes: number;
