@@ -24,11 +24,22 @@ export function resolveGoalBindings(
       const id =
         overrides?.[key as keyof GoalBindings] ||
         saved?.[key as keyof GoalBindings];
-      const property = Object.values(properties).find((p) =>
+      const entries = Object.values(properties);
+      let property = entries.find((p) =>
         id
           ? p.id === id
           : p.name === field.name || (key === "memo" && p.name === "テキスト"),
       );
+      // A recreated memo has a new ID. Recover only this descriptive field;
+      // explicit overrides and the week/target bindings remain strict.
+      if (!property && key === "memo" && !overrides?.memo) {
+        const candidates = entries.filter(
+          (p) =>
+            (p.name === field.name || p.name === "テキスト") &&
+            p.type === field.type,
+        );
+        if (candidates.length === 1) property = candidates[0];
+      }
       if (!property || property.type !== field.type)
         throw new Error("週の目標のプロパティ対応を確認してください。");
       return [key, property.id];

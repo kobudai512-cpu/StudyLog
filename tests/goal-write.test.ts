@@ -35,6 +35,40 @@ it("実接続のテキスト項目に対応する", () => {
     memo: "m",
   });
 });
+it("作り直したメモだけを名前と型で再接続する", () => {
+  const saved = { week: "w", target: "t", memo: "deleted" };
+  expect(resolveGoalBindings(properties, saved).memo).toBe("m");
+  expect(() =>
+    resolveGoalBindings(properties, saved, { memo: "deleted" }),
+  ).toThrow();
+  expect(() =>
+    resolveGoalBindings(properties, { ...saved, week: "deleted" }),
+  ).toThrow();
+  expect(() =>
+    resolveGoalBindings(properties, { ...saved, target: "deleted" }),
+  ).toThrow();
+  expect(() =>
+    resolveGoalBindings(
+      { ...properties, m: { ...properties.m, type: "number" } },
+      saved,
+    ),
+  ).toThrow();
+  expect(() =>
+    resolveGoalBindings(
+      {
+        ...properties,
+        second: { id: "second", name: "メモ", type: "rich_text" },
+      },
+      saved,
+    ),
+  ).toThrow();
+  expect(() =>
+    resolveGoalBindings(
+      { ...properties, m: { ...properties.m, type: "number" } },
+      { ...saved, memo: "m" },
+    ),
+  ).toThrow();
+});
 it.each([
   { weekStart: "2026-10-20" },
   { weekStart: "2026-02-30" },
