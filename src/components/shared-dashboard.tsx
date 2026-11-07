@@ -16,7 +16,7 @@ import {
   Eye,
   Leaf,
   RefreshCw,
-  Sparkles,
+  BookOpen,
   Target,
 } from "lucide-react";
 import {
@@ -117,10 +117,10 @@ export default function SharedDashboard({
           aria-label="Winkle Study"
         >
           <span className="brand-icon">
-            <Sparkles size={22} />
+            <BookOpen size={21} />
           </span>
           <span>
-            Winkle<span className="brand-sub">STUDY</span>
+            Winkle<span className="brand-sub">Study</span>
           </span>
         </a>
         <span className="shared-badge">
@@ -129,9 +129,8 @@ export default function SharedDashboard({
         </span>
       </header>
       <main>
-        <div className="eyebrow">A LITTLE PROGRESS, SHARED WITH YOU</div>
-        <h1>学びの積み重ねを、おすそわけ。</h1>
-        <p className="intro">毎日の小さな一歩を、見守るためのページです。</p>
+        <h1>学習レポート</h1>
+        <p className="intro">共有された学習時間と週の目標を確認できます。</p>
         <div className="shared-notice">
           <Leaf size={18} />
           <span>
@@ -368,10 +367,10 @@ export default function SharedDashboard({
         )}
         <footer>
           <span>
-            <Sparkles size={13} />
+            <BookOpen size={14} />
             Winkle Study
           </span>
-          <span>READ ONLY · 学びを、そっと見守る。</span>
+          <span>閲覧専用の学習レポート</span>
         </footer>
       </main>
     </div>

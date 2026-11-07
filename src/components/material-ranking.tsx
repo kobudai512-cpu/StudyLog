@@ -17,7 +17,12 @@ export default function MaterialRanking({
   const [sort, setSort] = useState<MaterialSort>("time-desc");
   const rows = materialRanking(records, range, subject, sort);
   return (
-    <section className="panel material-panel" aria-label="教材別の学習データ">
+    <section
+      id="materials"
+      tabIndex={-1}
+      className="panel material-panel"
+      aria-label="教材別の学習データ"
+    >
       <div className="panel-heading">
         <div>
           <h3>

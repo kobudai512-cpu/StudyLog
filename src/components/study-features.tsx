@@ -54,6 +54,16 @@ export function WeeklyGoal({
           </h3>
           <p>{weekStart}からの週・すべての教科</p>
         </div>
+        <GoalDialog
+          key={weekStart}
+          mode={data.mode}
+          weekStart={weekStart}
+          goal={goal}
+          disabled={
+            Boolean(data.goalError) || matches.length > 1 || issues.length > 0
+          }
+          onSaved={onSaved}
+        />
         <span className="unit-tag">
           {data.mode === "demo" ? "デモの目標" : "Notionと同期"}
         </span>
@@ -99,17 +109,7 @@ export function WeeklyGoal({
           </p>
         )}
         <div className="goal-actions">
-          <GoalDialog
-            key={weekStart}
-            mode={data.mode}
-            weekStart={weekStart}
-            goal={goal}
-            disabled={
-              Boolean(data.goalError) || matches.length > 1 || issues.length > 0
-            }
-            onSaved={onSaved}
-          />
-          {data.mode === "live" ? (
+          {data.mode === "live" && (
             <a
               className="record-shortcut"
               href={goal?.notionUrl || GOALS_URL}
@@ -119,10 +119,6 @@ export function WeeklyGoal({
               <ExternalLink size={15} />
               Notionで確認
             </a>
-          ) : (
-            <p className="goal-message">
-              デモ内でお試しできます。Notionへの保存は本番画面から。
-            </p>
           )}
         </div>
         <details className="goal-sync-help">
@@ -157,7 +153,12 @@ export function StudyCalendar({
 }) {
   const cells = monthCalendar(records, month, subject);
   return (
-    <section className="panel calendar-panel" aria-label="月間カレンダー">
+    <section
+      id="calendar"
+      tabIndex={-1}
+      className="panel calendar-panel"
+      aria-label="月間カレンダー"
+    >
       <div className="panel-heading">
         <div>
           <h3>月間カレンダー</h3>
@@ -252,13 +253,13 @@ export function HourlyChart({
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              tick={{ fill: "#89918b", fontSize: 11 }}
+              tick={{ fill: "#626b78", fontSize: 11 }}
               minTickGap={18}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fill: "#89918b", fontSize: 11 }}
+              tick={{ fill: "#626b78", fontSize: 11 }}
             />
             <Tooltip
               formatter={(value) => `${Number(Number(value).toFixed(1))}分`}

@@ -21,17 +21,13 @@ import {
   ArrowUpRight,
   BookOpen,
   CalendarDays,
-  ChartNoAxesCombined,
   ChevronLeft,
   ChevronRight,
   Clock3,
   ExternalLink,
-  LayoutDashboard,
-  Leaf,
   LogOut,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { HourlyChart, StudyCalendar, WeeklyGoal } from "./study-features";
 import { shiftedWeek } from "@/lib/study-features";
@@ -39,6 +35,7 @@ import RecordDialog from "./record-dialog";
 import MaterialRanking from "./material-ranking";
 import { filterMaterial } from "@/lib/materials";
 import ShareDialog from "./share-dialog";
+import StudyNavigation from "./study-navigation";
 import { demoSnapshot } from "@/lib/demo";
 import {
   addDays,
@@ -232,6 +229,9 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#overview">
+        本文へ移動
+      </a>
       <aside className="sidebar">
         <a
           className="brand"
@@ -239,49 +239,18 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
           aria-label="Winkle Study ホーム"
         >
           <span className="brand-icon">
-            <Sparkles size={22} />
+            <BookOpen size={21} />
           </span>
           <span>
-            Winkle<span className="brand-sub">STUDY</span>
+            Winkle<span className="brand-sub">Study</span>
           </span>
         </a>
-        <div className="workspace-label">MY WORKSPACE</div>
-        <nav aria-label="メインナビゲーション">
-          <a className="nav-item active" href="#overview">
-            <LayoutDashboard size={18} />
-            ダッシュボード
-          </a>
-          <a className="nav-item" href="#records">
-            <BookOpen size={18} />
-            学習記録
-          </a>
-          <a className="nav-item" href="#weekly">
-            <ChartNoAxesCombined size={18} />
-            学習の推移
-          </a>
-          {authenticated && (
-            <button
-              className="nav-item mobile-logout"
-              aria-label="ログアウト"
-              onClick={() => void signOut()}
-            >
-              <LogOut size={17} />
-            </button>
-          )}
-        </nav>
+        <div className="workspace-label">学習ノート</div>
+        <StudyNavigation enabled={canRead} />
         <div className="sidebar-bottom">
-          <div className="small-garden">
-            <Leaf size={25} />
-            <p>
-              小さな学びが、
-              <br />
-              大きな一歩に。
-            </p>
-            <span>Every little study counts.</span>
-          </div>
           <div className="private-label">
             <ShieldCheck size={15} />
-            あなたのための学習スペース
+            個人用ワークスペース
           </div>
           {authenticated && (
             <button className="logout" onClick={() => void signOut()}>
@@ -294,36 +263,56 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
       <div className="main-shell">
         <header className="topbar">
           <span className="breadcrumb">
-            マイワークスペース <span>/</span> <strong>ダッシュボード</strong>
+            学習ノート <span>/</span> <strong>振り返り</strong>
           </span>
           <div className="topbar-right">
+            {today && (
+              <div className="page-context">
+                <div className="today-label">
+                  <CalendarDays size={17} />
+                  {today
+                    ? new Intl.DateTimeFormat("ja-JP", {
+                        dateStyle: "long",
+                        timeZone: "Asia/Tokyo",
+                      }).format(new Date(`${today}T12:00:00+09:00`))
+                    : "Asia/Tokyo"}
+                </div>
+              </div>
+            )}
             <span className="private-pill">
               <span />
-              PRIVATE
+              非公開
             </span>
-            <span className="avatar">W</span>
           </div>
         </header>
-        <main id="overview">
+        <main id="overview" tabIndex={-1}>
           <div className="heading-row">
             <div>
-              <div className="eyebrow">YOUR LEARNING, AT A GLANCE</div>
-              <h1>
-                学びの積み重ねを、見える形に<span>。</span>
-              </h1>
-              <p className="intro">
-                毎日の記録から、自分のペースを見つけよう。
-              </p>
+              <h1>学習ノート</h1>
+              <p className="intro">記録を残して、学びのペースを確かめる。</p>
             </div>
-            <div className="today-label">
-              <CalendarDays size={17} />
-              {today
-                ? new Intl.DateTimeFormat("ja-JP", {
-                    dateStyle: "long",
-                    timeZone: "Asia/Tokyo",
-                  }).format(new Date(`${today}T12:00:00+09:00`))
-                : "Asia/Tokyo"}
-            </div>
+            {canRead && (
+              <div className="page-actions">
+                {(authenticated || mode === "demo") && (
+                  <ShareDialog demo={mode === "demo"} />
+                )}
+                <RecordDialog
+                  mode={mode}
+                  onSaved={(record) => {
+                    if (record)
+                      setData((current) =>
+                        current
+                          ? {
+                              ...current,
+                              records: [record, ...current.records],
+                            }
+                          : current,
+                      );
+                    else void load(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
           {mode === "demo" && (
             <div className="demo-banner">
@@ -341,14 +330,13 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
           {!canRead ? (
             <section className="login-card">
               <span className="login-icon">
-                <Leaf size={35} />
+                <BookOpen size={32} />
               </span>
-              <div className="eyebrow">A LITTLE PROGRESS, EVERY DAY</div>
-              <h2>あなただけの、学びの居場所。</h2>
+              <h2>学習の記録を、ひとつの場所に。</h2>
               <p>
                 NotionのStudy Logをつないで、
                 <br />
-                日々の頑張りを振り返りましょう。
+                学習時間・教材・週の目標を振り返れます。
               </p>
               {authReady ? (
                 <button
@@ -361,11 +349,11 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                 <div className="setup-notice">
                   Googleログインの設定待ちです。
                   <br />
-                  環境変数の設定手順はREADMEにまとめています。
+                  設定が完了するまで、デモで操作をお試しください。
                 </div>
               )}
               <a className="demo-link" href="/demo">
-                デモダッシュボードを見る <span aria-hidden>→</span>
+                デモで試す
               </a>
               <small>
                 <ShieldCheck size={14} />
@@ -379,6 +367,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   {PERIODS.map(([value, label]) => (
                     <button
                       key={value}
+                      disabled={!today}
                       aria-pressed={period === value}
                       className={period === value ? "selected" : ""}
                       onClick={() => selectPeriod(value)}
@@ -437,14 +426,12 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                 </div>
               </section>
               <div className="study-actions">
-                {(authenticated || mode === "demo") && (
-                  <ShareDialog demo={mode === "demo"} />
-                )}
                 {period === "week" && (
                   <div className="week-navigation" aria-label="週の移動">
                     <button
                       className="refresh-button"
                       aria-label="前の週"
+                      disabled={!today}
                       onClick={() => {
                         setWeekOffset(weekOffset - 1);
                         setPage(1);
@@ -479,21 +466,6 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                     )}
                   </div>
                 )}
-                <RecordDialog
-                  mode={mode}
-                  onSaved={(record) => {
-                    if (record)
-                      setData((current) =>
-                        current
-                          ? {
-                              ...current,
-                              records: [record, ...current.records],
-                            }
-                          : current,
-                      );
-                    else void load(false);
-                  }}
-                />
               </div>
               {period === "custom" && (
                 <div className="custom-range">
@@ -685,7 +657,11 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                       );
                     }}
                   />
-                  <div className="section-heading">
+                  <div
+                    className="section-heading"
+                    id="study-report"
+                    tabIndex={-1}
+                  >
                     <div>
                       <h2>
                         {isPastWeek
@@ -698,7 +674,6 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                         {minutesLabel(summary.total)}
                       </p>
                     </div>
-                    <span className="quiet-label">STUDY OVERVIEW</span>
                   </div>
                   {summary.records.length === 0 && (
                     <div className="empty-state">
@@ -749,20 +724,20 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                                 dataKey="label"
                                 tickLine={false}
                                 axisLine={false}
-                                tick={{ fill: "#89918b", fontSize: 11 }}
+                                tick={{ fill: "#626b78", fontSize: 11 }}
                                 minTickGap={22}
                               />
                               <YAxis
                                 tickLine={false}
                                 axisLine={false}
-                                tick={{ fill: "#89918b", fontSize: 11 }}
+                                tick={{ fill: "#626b78", fontSize: 11 }}
                               />
                               <Tooltip
                                 cursor={{ fill: "#f3f6f3" }}
                                 formatter={(value) => `${value}分`}
                                 contentStyle={{
                                   border: "1px solid #e5eae5",
-                                  borderRadius: 12,
+                                  borderRadius: 6,
                                   fontSize: 12,
                                 }}
                               />
@@ -861,12 +836,12 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                             </Pie>
                             <Tooltip
                               formatter={(value) => `${value}分`}
-                              contentStyle={{ borderRadius: 12, fontSize: 12 }}
+                              contentStyle={{ borderRadius: 6, fontSize: 12 }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="donut-label">
-                          <span>TOTAL</span>
+                          <span>合計</span>
                           <strong>
                             {Number((summary.total / 60).toFixed(1))}
                             <small>時間</small>
@@ -891,171 +866,30 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                         </p>
                       )}
                     </section>
-                    <section id="weekly" className="panel weekly-panel">
-                      <div className="panel-heading">
-                        <div>
-                          <h3>週ごとの学習リズム</h3>
-                          <p>直近8週間 · 今週は今日まで</p>
-                        </div>
-                        <span className="unit-tag">単位：分</span>
-                      </div>
-                      <div className="weekly-chart">
-                        <ResponsiveContainer
-                          width="100%"
-                          height="100%"
-                          minWidth={0}
-                        >
-                          <AreaChart
-                            data={trend}
-                            margin={{
-                              top: 12,
-                              right: 14,
-                              left: -24,
-                              bottom: 0,
-                            }}
-                            accessibilityLayer
-                          >
-                            <defs>
-                              <linearGradient
-                                id="weeklyFill"
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="1"
-                              >
-                                <stop
-                                  offset="0%"
-                                  stopColor="#4e9879"
-                                  stopOpacity={0.22}
-                                />
-                                <stop
-                                  offset="100%"
-                                  stopColor="#4e9879"
-                                  stopOpacity={0.01}
-                                />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid vertical={false} stroke="#edf0ed" />
-                            <XAxis
-                              dataKey="date"
-                              tickFormatter={(v) => `${String(v).slice(5)}週`}
-                              tickLine={false}
-                              axisLine={false}
-                              tick={{ fill: "#89918b", fontSize: 11 }}
-                            />
-                            <YAxis
-                              tickLine={false}
-                              axisLine={false}
-                              tick={{ fill: "#89918b", fontSize: 11 }}
-                            />
-                            <Tooltip
-                              formatter={(value) => `${value}分`}
-                              labelFormatter={(label) => `${label} からの週`}
-                              contentStyle={{ borderRadius: 12, fontSize: 12 }}
-                            />
-                            <Area
-                              type="linear"
-                              isAnimationActive={false}
-                              dataKey="minutes"
-                              name="学習時間"
-                              stroke="#4b9274"
-                              strokeWidth={2.5}
-                              fill="url(#weeklyFill)"
-                              dot={{
-                                r: 4,
-                                fill: "#4b9274",
-                                strokeWidth: 3,
-                                stroke: "white",
-                              }}
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <details className="data-details">
-                        <summary>週別の数値を表で見る</summary>
-                        <table>
-                          <caption className="sr-only">週別合計</caption>
-                          <thead>
-                            <tr>
-                              <th>週の開始日</th>
-                              <th>合計</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {trend.map((w) => (
-                              <tr key={w.date}>
-                                <td>{w.date}</td>
-                                <td>
-                                  {w.recorded
-                                    ? minutesLabel(w.minutes)
-                                    : "未記録"}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </details>
-                    </section>
-                    <section className="reflection">
-                      <div className="reflection-icon">
-                        <Leaf size={23} />
-                      </div>
-                      <div className="eyebrow">ONE STEP AT A TIME</div>
-                      <h3>
-                        今日の一歩も、
-                        <br />
-                        ちゃんと積み重なっている。
-                      </h3>
-                      <p>
-                        この期間は <strong>{summary.recordedDays}日</strong>{" "}
-                        の記録があります。
-                        <br />
-                        自分のペースで、学びを続けよう。
-                      </p>
-                      <div className="average">
-                        <span>記録日あたりの平均</span>
-                        <strong>
-                          {summary.recordedDays
-                            ? minutesLabel(summary.total / summary.recordedDays)
-                            : "記録なし"}
-                        </strong>
-                      </div>
-                    </section>
+                    <div className="period-average">
+                      <span>記録日あたりの平均</span>
+                      <strong>
+                        {summary.recordedDays
+                          ? minutesLabel(summary.total / summary.recordedDays)
+                          : "記録なし"}
+                      </strong>
+                      <span>この期間の記録 {summary.recordedDays}日</span>
+                    </div>
                   </div>
-                  <MaterialRanking
-                    records={baseRecords}
-                    range={range}
-                    subject={subject}
-                    onSelect={(value) => {
-                      setMaterial(value);
-                      setPage(1);
-                    }}
-                  />
-                  <StudyCalendar
-                    records={records}
-                    month={calendarMonth || today.slice(0, 7)}
-                    onMonth={setCalendarMonth}
-                    subject={subject}
-                    today={today}
-                    selectedDate={
-                      range.start === range.end ? range.start : undefined
-                    }
-                    onDay={(date) => {
-                      setCustom({ start: date, end: date });
-                      setPeriod("custom");
-                      setPage(1);
-                    }}
-                  />
-                  <section className="panel records-panel" id="records">
+                  <section
+                    className="panel records-panel"
+                    id="records"
+                    tabIndex={-1}
+                  >
                     <div className="panel-heading">
                       <div>
                         <h3>
-                          学習の足あと{" "}
+                          学習記録{" "}
                           <span className="count-badge">
                             {summary.records.length}
                           </span>
                         </h3>
-                        <p>記録の原本はNotionに。ここでは、振り返りを。</p>
+                        <p>選択した期間・教科・教材の記録</p>
                       </div>
                       <label className="record-sort">
                         並び順
@@ -1075,46 +909,51 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                       </label>
                     </div>
                     <div className="record-table-wrap">
-                      <table className="record-table">
+                      <table className="record-table" role="table">
                         <caption className="sr-only">学習記録の一覧</caption>
-                        <thead>
-                          <tr>
-                            <th>学習日</th>
-                            <th>教科</th>
-                            <th>学習内容・単元</th>
-                            <th>学習時間</th>
-                            <th>
+                        <thead role="rowgroup">
+                          <tr role="row">
+                            <th role="columnheader">学習日</th>
+                            <th role="columnheader">教科</th>
+                            <th role="columnheader">学習内容・単元</th>
+                            <th role="columnheader">学習時間</th>
+                            <th role="columnheader">
                               <span className="sr-only">元ページ</span>
                             </th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                           {orderedRecords
                             .slice((page - 1) * 15, page * 15)
                             .map((r) => (
-                              <tr key={r.id}>
-                                <td className="record-date">
+                              <tr key={r.id} role="row">
+                                <td
+                                  role="cell"
+                                  className="record-date"
+                                  data-label="学習日"
+                                >
                                   {r.date.slice(5).replace("-", "/")}
                                 </td>
-                                <td>
+                                <td role="cell">
                                   <span
                                     className="subject-badge"
                                     style={{
-                                      color: subjectColor(r.subject),
-                                      background: `color-mix(in srgb, ${subjectColor(r.subject)} 10%, white)`,
+                                      color: "var(--ink)",
+                                      borderLeft: `3px solid ${subjectColor(r.subject)}`,
+                                      background: "var(--subtle)",
                                     }}
                                   >
                                     {r.subject}
                                   </span>
                                 </td>
-                                <td className="record-title">
+                                <td role="cell" className="record-title">
                                   <strong>{r.title}</strong>
                                   <span className="record-material">
                                     {r.material || "教材未設定"}
                                   </span>
                                   {r.unit && <small>{r.unit}</small>}
                                 </td>
-                                <td className="record-time">
+                                <td role="cell" className="record-time">
                                   {minutesLabel(r.durationMinutes)}
                                   {r.recordedDurationMinutes !== undefined && (
                                     <small className="range-time">
@@ -1124,7 +963,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                                     </small>
                                   )}
                                 </td>
-                                <td>
+                                <td role="cell">
                                   {r.notionUrl ? (
                                     <a
                                       className="notion-link"
@@ -1178,6 +1017,123 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                       </div>
                     </div>
                   </section>
+                  <MaterialRanking
+                    records={baseRecords}
+                    range={range}
+                    subject={subject}
+                    onSelect={(value) => {
+                      setMaterial(value);
+                      setPage(1);
+                      document.getElementById("overview")?.focus();
+                    }}
+                  />
+                  <StudyCalendar
+                    records={records}
+                    month={calendarMonth || today.slice(0, 7)}
+                    onMonth={setCalendarMonth}
+                    subject={subject}
+                    today={today}
+                    selectedDate={
+                      range.start === range.end ? range.start : undefined
+                    }
+                    onDay={(date) => {
+                      setCustom({ start: date, end: date });
+                      setPeriod("custom");
+                      setPage(1);
+                      requestAnimationFrame(() =>
+                        document.getElementById("study-report")?.focus(),
+                      );
+                    }}
+                  />
+                  <section
+                    id="weekly"
+                    tabIndex={-1}
+                    className="panel weekly-panel"
+                  >
+                    <div className="panel-heading">
+                      <div>
+                        <h3>週ごとの学習リズム</h3>
+                        <p>直近8週間 · 今週は今日まで</p>
+                      </div>
+                      <span className="unit-tag">単位：分</span>
+                    </div>
+                    <div className="weekly-chart">
+                      <ResponsiveContainer
+                        width="100%"
+                        height="100%"
+                        minWidth={0}
+                      >
+                        <AreaChart
+                          data={trend}
+                          margin={{
+                            top: 12,
+                            right: 14,
+                            left: -24,
+                            bottom: 0,
+                          }}
+                          accessibilityLayer
+                        >
+                          <CartesianGrid vertical={false} stroke="#edf0ed" />
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={(v) => `${String(v).slice(5)}週`}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#626b78", fontSize: 11 }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#626b78", fontSize: 11 }}
+                          />
+                          <Tooltip
+                            formatter={(value) => `${value}分`}
+                            labelFormatter={(label) => `${label} からの週`}
+                            contentStyle={{ borderRadius: 6, fontSize: 12 }}
+                          />
+                          <Area
+                            type="linear"
+                            isAnimationActive={false}
+                            dataKey="minutes"
+                            name="学習時間"
+                            stroke="#315da8"
+                            strokeWidth={2.5}
+                            fill="#eef2f8"
+                            dot={{
+                              r: 4,
+                              fill: "#315da8",
+                              strokeWidth: 3,
+                              stroke: "white",
+                            }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <details className="data-details">
+                      <summary>週別の数値を表で見る</summary>
+                      <table>
+                        <caption className="sr-only">週別合計</caption>
+                        <thead>
+                          <tr>
+                            <th>週の開始日</th>
+                            <th>合計</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trend.map((w) => (
+                            <tr key={w.date}>
+                              <td>{w.date}</td>
+                              <td>
+                                {w.recorded
+                                  ? minutesLabel(w.minutes)
+                                  : "未記録"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </details>
+                  </section>
                 </>
               ) : !loading && error ? (
                 <div className="empty-state">
@@ -1213,12 +1169,12 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
           )}
           <footer>
             <span>
-              <Sparkles size={13} />
+              <BookOpen size={14} />
               Winkle Study
             </span>
             <span>
-              日々の学びに、小さな光を。 <span className="footer-dot">·</span>{" "}
-              {mode === "demo" ? "DEMO DATA" : "PRIVATE · NOTION"}
+              学習記録はNotionに保存 <span className="footer-dot">·</span>{" "}
+              {mode === "demo" ? "デモ" : "個人用"}
             </span>
           </footer>
         </main>

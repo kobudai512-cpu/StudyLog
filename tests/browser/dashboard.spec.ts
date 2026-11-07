@@ -136,7 +136,7 @@ test("未認証アクセスは実データを返さない", async ({ request, pa
   ).toBe(401);
   await page.goto("/");
   await expect(
-    page.getByRole("link", { name: /デモダッシュボードを見る/ }),
+    page.getByRole("link", { name: "デモで試す", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".record-table")).toHaveCount(0);
 });
@@ -147,6 +147,10 @@ test("記録ポップアップ・推定プレビュー・デモ保存・閉じ�
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/demo");
+  // Keep the fixed historical fixture inside the selected range on any run date.
+  await page.getByRole("button", { name: "期間を指定", exact: true }).click();
+  await page.getByLabel("開始日", { exact: true }).fill("2026-10-22");
+  await page.getByLabel("終了日", { exact: true }).fill("2026-10-22");
   await page.getByRole("button", { name: "記録する", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "勉強を記録する" });
   await expect(dialog).toBeVisible();

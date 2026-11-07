@@ -32,7 +32,7 @@ export default function GoalDialog({
   return (
     <>
       <button
-        className="primary goal-edit"
+        className="goal-edit"
         disabled={disabled}
         onClick={() => {
           if (!uncertain) {
