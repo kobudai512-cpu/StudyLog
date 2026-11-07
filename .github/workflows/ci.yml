@@ -24,6 +24,10 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
       - run: pnpm exec playwright install --with-deps chromium
       - name: Browser checks against production server
+        env:
+          # A production-mode local server requires an explicit cache directory.
+          # Keep test state isolated from the checkout and real credentials.
+          CACHE_DIR: ${{ runner.temp }}/winkle-browser-cache
         run: |
           pnpm start > /tmp/winkle-next.log 2>&1 &
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3000/demo > /dev/null && break; sleep 2; done
