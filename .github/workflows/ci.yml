@@ -61,9 +61,10 @@ jobs:
         run: docker rm -f winkle-ci || true
 
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       - name: Build and lint Android companion
         working-directory: android
         run: |
