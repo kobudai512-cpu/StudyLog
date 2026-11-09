@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+def signing = new Properties()
+def signingFile = rootProject.file('signing.properties')
+if (signingFile.exists()) signingFile.withInputStream { signing.load(it) }
+android {
+ namespace 'app.winkle.study'
+ compileSdk 36
+ defaultConfig { applicationId 'app.winkle.study'; minSdk 31; targetSdk 36; versionCode 1; versionName '1.0.0' }
+ signingConfigs { release { if (signingFile.exists()) { storeFile file(signing.storeFile); storePassword signing.storePassword; keyAlias signing.keyAlias; keyPassword signing.keyPassword } } }
+ buildTypes { release { signingConfig signingConfigs.release; minifyEnabled false } }
+}
+
+android.defaultConfig.testInstrumentationRunner = 'app.winkle.study.WidgetTests'

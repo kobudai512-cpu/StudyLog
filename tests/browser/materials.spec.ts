@@ -6,6 +6,8 @@ test("教材でグラフ・一覧を絞り込み、教材の順位と記録を�
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/demo");
   await expect(page.locator(".material-table tbody tr").first()).toBeVisible();
+  // Include a complete prior week; early weekdays need not contain an unset material.
+  await page.getByRole("button", { name: "前の週", exact: true }).click();
   const goal = await page.locator(".goal-result").innerText();
   await page
     .getByLabel("教材", { exact: true })

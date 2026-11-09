@@ -11,3 +11,10 @@ test-results/
 .DS_Store
 *.log
 .vercel/
+
+android/.gradle/
+android/**/build/
+android/local.properties
+android/signing.properties
+*.jks
+*.keystore

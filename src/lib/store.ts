@@ -65,7 +65,7 @@ export class FileStore implements CacheStore {
 export function configuredStore(purpose = "sync"): CacheStore {
   const namespace = createHash("sha256")
     .update(
-      (purpose === "sharing"
+      (purpose === "sharing" || purpose === "widget"
         ? [
             purpose,
             "v1",
@@ -105,7 +105,7 @@ export function configuredStore(purpose = "sync"): CacheStore {
       redisToken,
       `winkle:${namespace}`,
       fetch,
-      purpose === "sharing" ? 0 : 604800,
+      purpose === "sharing" || purpose === "widget" ? 0 : 604800,
     );
   if (redisUrl || redisToken || process.env.VERCEL === "1")
     throw new Error("共有キャッシュのREST URLとトークンを設定してください。");

@@ -5,3 +5,11 @@
 node_modules
 test-results
 playwright-report
+
+android/.gradle/
+android/**/build/
+android/local.properties
+android/signing.properties
+*.jks
+*.keystore
+android/

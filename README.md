@@ -189,3 +189,7 @@ pnpm test:browser
 ## 構成
 
 `src/lib/study.ts`（集計）→`notion-schema.ts`（対応・正規化）→`notion.ts`（読取）→`store.ts`/`sync.ts`（永続化・同期）→`app/api/study`（認可）→`components/dashboard.tsx`（表示）。追加のデータ連携は独立したproviderとして追加できます。
+
+## Androidウィジェット
+
+`/widget` から署名済みAPKをダウンロードし、ログインして専用キーを発行できます。今週の時間・週目標を2×2の白黒ウィジェットに表示し、端末のライト／ダーク設定に追従します。Android 12以降に対応。構成・ビルド・署名・更新の仕様は [android/README.md](android/README.md) を参照してください。

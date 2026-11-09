@@ -246,6 +246,11 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
           </span>
         </a>
         <div className="workspace-label">学習ノート</div>
+        {authenticated && (
+          <Link href="/widget" className="widget-link widget-link-sidebar">
+            スマホ連携 ↗
+          </Link>
+        )}
         <StudyNavigation enabled={canRead} />
         <div className="sidebar-bottom">
           <div className="private-label">
@@ -290,6 +295,11 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
             <div>
               <h1>学習ノート</h1>
               <p className="intro">記録を残して、学びのペースを確かめる。</p>
+              {authenticated && (
+                <Link href="/widget" className="widget-link widget-link-mobile">
+                  スマホ連携 ↗
+                </Link>
+              )}
             </div>
             {canRead && (
               <div className="page-actions">

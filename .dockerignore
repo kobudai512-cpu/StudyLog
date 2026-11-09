@@ -7,3 +7,11 @@ test-results
 playwright-report
 *.log
 *.tsbuildinfo
+
+android/.gradle/
+android/**/build/
+android/local.properties
+android/signing.properties
+*.jks
+*.keystore
+android/

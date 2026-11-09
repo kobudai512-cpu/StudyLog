@@ -33,7 +33,7 @@ await writeFile(
 // iOS applies its own mask; provide an opaque background beneath the SVG corners.
 await sharp(source, { density: 288 })
   .resize(180, 180)
-  .flatten({ background: "#315da8" })
+  .flatten({ background: "#ffffff" })
   .png()
   .toFile(
     fileURLToPath(new URL("../src/app/apple-icon.png", import.meta.url)),

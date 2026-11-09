@@ -16,5 +16,6 @@ try {
 await cp(join(root, ".next/static"), join(standalone, ".next/static"), {
   recursive: true,
 });
+await cp(join(root, "public"), join(standalone, "public"), { recursive: true });
 process.env.HOSTNAME ||= "127.0.0.1";
 await import(pathToFileURL(join(standalone, "server.js")).href);

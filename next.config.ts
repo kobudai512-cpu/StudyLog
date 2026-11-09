@@ -6,6 +6,7 @@ const config: NextConfig = {
     "*": [
       "./.env*",
       "./.cache/**",
+      "./android/**",
       "./test-results/**",
       "./playwright-report/**",
     ],

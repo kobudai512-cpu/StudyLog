@@ -3,6 +3,7 @@ import type { Bindings } from "./notion-schema";
 import type { GoalBindings } from "./goals";
 
 export type CacheState = {
+  widget?: { tokenHash: string; createdAt: string };
   sharing?: { tokenHash: string; sealedToken: string; createdAt: string };
   snapshot?: Snapshot;
   bindings?: Bindings;
