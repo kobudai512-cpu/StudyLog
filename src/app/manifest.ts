@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#ffffff",
     icons: [192, 512].flatMap((size) =>
       (["any", "maskable"] as const).map((purpose) => ({
-        src: `/icons/home-light-v1-${size}.png`,
+        src: `/icons/home-dark-v2-${size}.png`,
         sizes: `${size}x${size}`,
         type: "image/png",
         purpose,

@@ -38,14 +38,14 @@ await sharp(source, { density: 288 })
   .toFile(fileURLToPath(new URL("../src/app/apple-icon.png", import.meta.url)));
 
 // Home-screen icons must not snapshot the favicon's dark-mode media query.
-// Keep an opaque light icon and leave room for Android launcher masks.
+// Keep an opaque dark icon and leave room for Android launcher masks.
 const book = await readFile(
   new URL("../android/app/src/main/res/drawable/book.xml", import.meta.url),
   "utf8",
 );
 const bookPath = book.match(/android:pathData="([^"]+)"/)[1];
 const launcher = Buffer.from(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><rect width="108" height="108" fill="#fff"/><path d="${bookPath}" fill="#111" fill-rule="evenodd"/></svg>`,
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><rect width="108" height="108" fill="#111"/><path d="${bookPath}" fill="#fff" fill-rule="evenodd"/></svg>`,
 );
 await mkdir(new URL("../public/icons/", import.meta.url), { recursive: true });
 for (const size of [192, 512]) {
@@ -54,7 +54,7 @@ for (const size of [192, 512]) {
     .png()
     .toFile(
       fileURLToPath(
-        new URL(`../public/icons/home-light-v1-${size}.png`, import.meta.url),
+        new URL(`../public/icons/home-dark-v2-${size}.png`, import.meta.url),
       ),
     );
 }
