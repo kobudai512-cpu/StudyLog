@@ -36,3 +36,7 @@ Certificate SHA-256: `8060c5b5c16b1fed4cf267b6e36cf85b98172f968faf72637481b1da33
 ## 1.1.0
 
 Minimal English widget: THIS WEEK, 12h 40m, / 15h and progress. Errors appear only when needed. The 2×2 target now uses a 96dp minimum with responsive compact rendering below 140dp; very small widgets hide the header/refresh button and still open the website on tap. Existing launcher placements may need removal and re-addition after upgrading. The APK uses the same signing identity and retains pairing on upgrade.
+
+## 1.2.0
+
+The existing launcher activity now routes MAIN/LAUNCHER intents to the fixed study URL in the browser, then finishes. A static long-press shortcut opens widget settings with an explicit SETUP action. Explicit activity intents from unpaired widgets continue to show setup. The dedicated monochrome drawable has a transparent background and an opaque book silhouette; launcher coloring remains under OS control. Pairing storage and package/signing identity are unchanged.

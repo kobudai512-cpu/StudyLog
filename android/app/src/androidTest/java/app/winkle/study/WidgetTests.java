@@ -12,6 +12,9 @@ public class WidgetTests extends Instrumentation {
   Bundle result=new Bundle();
   try{
    Context c=getTargetContext();Storage.clear(c);
+   check(MainActivity.opensWebsite(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)),"launcher opens website");
+   check(!MainActivity.opensWebsite(new Intent("app.winkle.study.SETUP")),"shortcut opens settings");
+   check(!MainActivity.opensWebsite(new Intent(c,MainActivity.class)),"unpaired widget opens settings");
    String token="ws_"+"a".repeat(43);Storage.save(c,token);
    check(Storage.token(c).equals(token),"keystore round trip");
    check(!Storage.prefs(c).getString("key","").contains(token),"encrypted at rest");
@@ -35,7 +38,14 @@ public class WidgetTests extends Instrumentation {
    fixture.put("weekStart","2020-01-01");Storage.result(c,token,fixture.toString(),"",false);
    runOnMainSync(()->{View widget=StudyWidget.views(c).apply(activity,new FrameLayout(activity));check(((TextView)widget.findViewById(R.id.time)).getText().toString().equals("—"),"previous week never labelled current");});
    Storage.result(c,token,null,"",true);check(Storage.token(c).isEmpty(),"revoked key removed");check(!Storage.prefs(c).contains("summary"),"revoked cache removed");
-   Storage.clear(c);result.putString("stream","PASS: encryption, replacement race, weekly display, goal, week rollover, revocation, screenshot\n");finish(Activity.RESULT_OK,result);
+   Storage.clear(c);
+   IntentFilter filter=new IntentFilter(Intent.ACTION_VIEW);filter.addDataScheme("https");filter.addDataAuthority("winkle-study.vercel.app",null);
+   ActivityMonitor browserMonitor=addMonitor(filter,new ActivityResult(Activity.RESULT_OK,null),true);
+   runOnMainSync(()->c.startActivity(new Intent(c,MainActivity.class).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)));
+   waitForIdleSync();check(browserMonitor.getHits()==1,"launcher dispatches study URL to browser");removeMonitor(browserMonitor);
+   Activity settings=startActivitySync(new Intent(c,MainActivity.class).setAction("app.winkle.study.SETUP").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+   check(!settings.isFinishing(),"settings remain accessible");
+   result.putString("stream","PASS: encryption, replacement race, weekly display, goal, week rollover, revocation, screenshot\n");finish(Activity.RESULT_OK,result);
   }catch(Throwable e){result.putString("stream",android.util.Log.getStackTraceString(e));finish(Activity.RESULT_CANCELED,result);}
  }
 }

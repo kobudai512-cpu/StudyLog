@@ -1,0 +1,5 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+ <shortcut android:shortcutId="widget_settings" android:enabled="true" android:shortcutShortLabel="@string/widget_settings" android:icon="@drawable/book">
+  <intent android:action="app.winkle.study.SETUP" android:targetPackage="app.winkle.study" android:targetClass="app.winkle.study.MainActivity"/>
+ </shortcut>
+</shortcuts>

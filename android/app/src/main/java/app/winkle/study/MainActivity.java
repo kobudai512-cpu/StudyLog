@@ -11,12 +11,21 @@ public class MainActivity extends Activity {
  TextView text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(getColor(R.color.ink));t.setPadding(0,dp(8),0,dp(8));return t;}
  Button flatButton(){Button button=new Button(this);button.setStateListAnimator(null);return button;}
  void browser(String path){startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(StudyWidget.SITE+path)));}
- @Override public void onCreate(Bundle saved){super.onCreate(saved);show();}
+ static boolean opensWebsite(Intent intent){return Intent.ACTION_MAIN.equals(intent.getAction()) && intent.hasCategory(Intent.CATEGORY_LAUNCHER);}
+ @Override public void onCreate(Bundle saved){
+  super.onCreate(saved);
+  if(opensWebsite(getIntent())){
+   try{browser("");finish();return;}
+   catch(ActivityNotFoundException unavailable){/* Keep setup accessible if no browser is installed. */}
+  }
+  show();
+ }
  void show(){
   ScrollView scroll=new ScrollView(this);LinearLayout col=new LinearLayout(this);col.setOrientation(LinearLayout.VERTICAL);col.setPadding(dp(24),dp(24),dp(24),dp(24));scroll.addView(col);setContentView(scroll);
   scroll.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars());v.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;});
   TextView title=text("今週を、ホーム画面に。",26);title.setTypeface(null,Typeface.BOLD);col.addView(title);
   col.addView(text("Winkle Study · 学習ウィジェット",14));
+  col.addView(text("アプリアイコンをタップすると学習サイトを開きます。この設定は、アイコンを長押し →「ウィジェット設定」から開けます。",14));
   col.addView(text("白黒の表示が端末のライト／ダーク設定に追従します。3×3のままの場合はウィジェットを置き直してください。今週は日本時間の月曜から日曜です。",15));
   Button site=flatButton();site.setText("1. サイトで連携キーを発行");site.setOnClickListener(v->browser("/widget"));col.addView(site);
   EditText input=new EditText(this);input.setHint("2. 連携キーを貼り付け");input.setSingleLine(true);input.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);input.setTextColor(getColor(R.color.ink));col.addView(input);
