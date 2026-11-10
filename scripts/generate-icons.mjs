@@ -58,3 +58,21 @@ for (const size of [192, 512]) {
       ),
     );
 }
+
+// Theme masks contain only the book silhouette; the surrounding tile is transparent.
+const monochrome = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><path d="${bookPath}" fill="#fff" fill-rule="evenodd"/></svg>`,
+);
+for (const size of [192, 512]) {
+  await sharp(monochrome)
+    .resize(size, size)
+    .png()
+    .toFile(
+      fileURLToPath(
+        new URL(
+          `../public/icons/book-monochrome-v3-${size}.png`,
+          import.meta.url,
+        ),
+      ),
+    );
+}
