@@ -22,8 +22,11 @@ public class WidgetTests extends Instrumentation {
    Activity activity=startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
    runOnMainSync(()->{
     View widget=StudyWidget.views(c).apply(activity,new FrameLayout(activity));
-    check(((TextView)widget.findViewById(R.id.time)).getText().toString().equals("12時間40分"),"weekly duration");
-    check(((TextView)widget.findViewById(R.id.goal)).getText().toString().contains("84%"),"goal percentage");
+    check(((TextView)widget.findViewById(R.id.time)).getText().toString().equals("12h 40m"),"weekly duration");
+    check(((TextView)widget.findViewById(R.id.goal)).getText().toString().equals("/ 15h"),"short goal label");
+    View compact=StudyWidget.views(c,true).apply(activity,new FrameLayout(activity));
+    check(compact.findViewById(R.id.widget_header).getVisibility()==View.GONE,"compact layout removes header");
+    check(((TextView)compact.findViewById(R.id.time)).getText().toString().equals("12h 40m"),"compact duration");
     LinearLayout frame=new LinearLayout(activity);frame.setGravity(Gravity.CENTER);frame.setBackgroundColor(0xff888888);
     int size=Math.round(210*c.getResources().getDisplayMetrics().density);frame.addView(widget,new LinearLayout.LayoutParams(size,size));activity.setContentView(frame);
    });

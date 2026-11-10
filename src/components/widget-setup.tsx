@@ -58,23 +58,20 @@ export default function WidgetSetup({
         className="widget-preview"
         aria-label="ウィジェットの表示例。実際の学習データではありません。"
       >
-        <span>今週の学習</span>
-        <strong>
-          12<span>時間</span>40<span>分</span>
-        </strong>
-        <span>目標 15時間 · 84%</span>
+        <span className="widget-preview-heading">
+          THIS WEEK <span aria-hidden="true">↻</span>
+        </span>
+        <strong>12h 40m</strong>
+        <span>/ 15h</span>
         <div className="widget-preview-track">
           <i />
         </div>
-        <small>
-          表示例 <span>更新</span>
-        </small>
       </div>
       <section>
         <h2>1. Androidアプリを入れる</h2>
         <p>
           Android
-          12以降に対応。Chromeでダウンロードし、APKを開いてインストールしてください。初回はChromeからのインストール許可が必要です。
+          12以降に対応。更新する場合も、同じアプリに上書きインストールできます。Chromeでダウンロードし、APKを開いてインストールしてください。初回はChromeからのインストール許可が必要です。
         </p>
         <a
           className="widget-primary"
@@ -84,7 +81,7 @@ export default function WidgetSetup({
           Androidアプリをダウンロード
         </a>
         <p className="widget-note">
-          バージョン 1.0.0 · このサイトから配布する専用アプリです。
+          バージョン 1.1.0 · このサイトから配布する専用アプリです。
         </p>
       </section>
       <section>
@@ -171,10 +168,10 @@ export default function WidgetSetup({
       <section>
         <h2>3. ホーム画面に置く</h2>
         <p>
-          アプリの「ホーム画面にウィジェットを追加」を押します。2×2を基本に、サイズは自由に調整できます。
+          アプリの「ホーム画面にウィジェットを追加」を押します。2×2を基本に、サイズは自由に調整できます。以前のウィジェットが3×3のままなら、ホーム画面からウィジェットだけを削除して追加し直してください。アプリの削除やキーの再発行は不要です。
         </p>
         <p>
-          ダーク時は黒地に白、ライト時は白地に黒。今週は日本時間の月曜〜日曜です。通常は約30分ごとに更新し、表示の「更新」でも取得できます。省電力設定や通信状況で更新が遅れる場合は、前回の値と時刻を表示します。
+          ダーク時は黒地に白、ライト時は白地に黒。今週は日本時間の月曜〜日曜です。通常は約30分ごとに更新し、表示の更新アイコンでも取得できます。省電力設定や通信状況で更新が遅れる場合は、前回の値と時刻を表示します。
         </p>
         <p>
           ホーム画面の単色アイコンは、Nothingの「テーマアイコン」を有効にしてください。アイコンの最終的な配色はランチャーが決めます。

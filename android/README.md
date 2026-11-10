@@ -32,3 +32,7 @@ Certificate SHA-256: `8060c5b5c16b1fed4cf267b6e36cf85b98172f968faf72637481b1da33
 - The widget refreshes approximately every 30 minutes through AppWidgetProvider and JobScheduler. OS battery/network policies may delay refresh. Manual refresh uses the same background job. Cached data is labelled with its original timestamp; previous-week totals are hidden after rollover. Server revocation clears local data on the next successful connection; offline devices may retain their last display until then.
 - Widgets and adaptive icons have black/white day/night resources. The monochrome adaptive layer lets launchers apply their themed icon palette. Chrome home-screen shortcuts cannot guarantee the same themed behavior; use this installed app's launcher icon.
 - Website URL is fixed to https://winkle-study.vercel.app in StudyWidget.java. Change it deliberately if hosting moves.
+
+## 1.1.0
+
+Minimal English widget: THIS WEEK, 12h 40m, / 15h and progress. Errors appear only when needed. The 2×2 target now uses a 96dp minimum with responsive compact rendering below 140dp; very small widgets hide the header/refresh button and still open the website on tap. Existing launcher placements may need removal and re-addition after upgrading. The APK uses the same signing identity and retains pairing on upgrade.
