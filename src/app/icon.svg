@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <style>rect{fill:#fff}path{stroke:#111}@media(prefers-color-scheme:dark){rect{fill:#111}path{stroke:#fff}}</style>
-  <rect width="64" height="64" rx="12" fill="#fff"/>
-  <path d="M32 20c-5-4-12-5-21-4v30c9-1 16 0 21 4 5-4 12-5 21-4V16c-9-1-16 0-21 4Zm0 0v30" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72">
+  <style>rect{fill:#fff}path{fill:#111}@media(prefers-color-scheme:dark){rect{fill:#111}path{fill:#fff}}</style>
+  <rect x="18" y="18" width="72" height="72" rx="16" fill="#fff"/>
+  <path d="M29,33 L48,33 Q54,33 54,38 Q54,33 60,33 L79,33 L79,73 L60,73 Q56,73 54,77 Q52,73 48,73 L29,73 Z M34,38 L34,68 L47,68 Q49,68 51,69 L51,40 Q50,38 47,38 Z M57,40 L57,69 Q59,68 61,68 L74,68 L74,38 L61,38 Q58,38 57,40 Z" fill="#111" fill-rule="evenodd"/>
 </svg>
