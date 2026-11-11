@@ -101,7 +101,7 @@ http://localhost:3000/api/auth/callback/google
 https://YOUR_HOST/api/auth/callback/google
 ```
 
-Googleの検証済みメールを確認し、ログイン時と全データAPIの両方で`ALLOWED_EMAILS`を完全一致で検証します。JWTセッションは12時間。公開ページやビルド成果物へNotionの記録を埋め込みません。`GET /api/study`と`POST /api/study`は未認証で401。POSTは正規Origin必須、cross-site拒否、30秒に1回まで。NextAuthの認証ルートはライブラリのCSRF処理を使います。
+Googleの検証済みメールを確認し、ログイン時と全データAPIの両方で`ALLOWED_EMAILS`を完全一致で検証します。ログイン状態は最終更新から365日間有効です。ログイン中にダッシュボードまたはスマホ連携画面を開くか再表示すると期限を更新します。公開ページやビルド成果物へNotionの記録を埋め込みません。`GET /api/study`と`POST /api/study`は未認証で401。POSTは正規Origin必須、cross-site拒否、30秒に1回まで。NextAuthの認証ルートはライブラリのCSRF処理を使います。
 
 ## 集計・画面
 

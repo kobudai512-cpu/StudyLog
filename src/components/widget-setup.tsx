@@ -1,4 +1,5 @@
 "use client";
+import { useSessionRenewal } from "./use-session-renewal";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -10,6 +11,7 @@ export default function WidgetSetup({
   authenticated: boolean;
   initialEnabled: boolean | null;
 }) {
+  useSessionRenewal(authenticated);
   const [enabled, setEnabled] = useState<boolean | null>(initialEnabled);
   const [token, setToken] = useState("");
   const [message, setMessage] = useState("");

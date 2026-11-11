@@ -1,4 +1,5 @@
 "use client";
+import { useSessionRenewal } from "./use-session-renewal";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import Link from "next/link";
@@ -61,6 +62,7 @@ const PERIODS: [Period, string][] = [
   ["custom", "期間を指定"],
 ];
 export default function Dashboard({ mode, authenticated, authReady }: Props) {
+  useSessionRenewal(authenticated);
   const [data, setData] = useState<StudyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

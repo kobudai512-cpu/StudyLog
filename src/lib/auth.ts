@@ -1,6 +1,8 @@
 import { getServerSession, type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { allowedEmail, authConfigured } from "./auth-policy";
+const sessionLifetimeSeconds = 365 * 24 * 60 * 60;
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: authConfigured()
@@ -11,7 +13,8 @@ export const authOptions: NextAuthOptions = {
         }),
       ]
     : [],
-  session: { strategy: "jwt", maxAge: 60 * 60 * 12 },
+  session: { strategy: "jwt", maxAge: sessionLifetimeSeconds },
+  jwt: { maxAge: sessionLifetimeSeconds },
   callbacks: {
     async signIn({ account, profile }) {
       return (
