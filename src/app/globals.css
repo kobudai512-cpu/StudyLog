@@ -2204,17 +2204,7 @@ footer > span:first-child {
 .shared-log-list { list-style: none; padding: 0; }
 .shared-log-list li { display: grid; gap: .25rem; padding: .75rem 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
 
-/* NType JP alpha, Nothing Japanese Font Project. Bundled under SIL OFL. */
-@font-face {
-  font-family: "NType JP";
-  src: url("/fonts/ntype-jp/regular.woff2") format("woff2");
-  font-display: swap;
-  font-weight: 400;
-}
 :root { color-scheme: light dark; }
-h1, h2, h3, .brand, .shared-total, .stat-value {
-  font-family: "NType JP", "Yu Mincho", serif;
-}
 .shared-memo { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -2228,6 +2218,8 @@ h1, h2, h3, .brand, .shared-total, .stat-value {
     --subtle: #161616;
     --selected: #303030;
   }
+  .subject-badge { filter: grayscale(1); }
+  .weekly-chart { --trend-line: #95b6ce; --trend-fill: #25333e; }
   .recharts-default-tooltip {
     background-color: var(--surface) !important;
     border-color: var(--border) !important;

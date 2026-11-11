@@ -1106,12 +1106,12 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                             isAnimationActive={false}
                             dataKey="minutes"
                             name="学習時間"
-                            stroke="var(--accent)"
+                            stroke="var(--trend-line, var(--accent))"
                             strokeWidth={2.5}
-                            fill="var(--selected)"
+                            fill="var(--trend-fill, var(--selected))"
                             dot={{
                               r: 4,
-                              fill: "var(--accent)",
+                              fill: "var(--trend-line, var(--accent))",
                               strokeWidth: 3,
                               stroke: "white",
                             }}

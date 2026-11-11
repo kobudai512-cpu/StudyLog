@@ -39,21 +39,21 @@ export type Period = "today" | "week" | "month" | "custom";
 export type Range = { start: string; end: string };
 
 export const SUBJECT_COLORS: Record<string, string> = {
-  数学: "light-dark(#4f83c4, #f2f2f2)",
-  英語: "light-dark(#9782c7, #aaa)",
-  国語: "light-dark(#d47c8b, #ccc)",
-  化学: "light-dark(#53a68d, #888)",
-  物理: "light-dark(#d69a52, #bbb)",
-  世界史: "light-dark(#a78367, #999)",
-  地理: "light-dark(#b2a241, #ddd)",
-  その他: "light-dark(#788493, #777)",
-  未分類: "light-dark(#9aa2ac, #aaa)",
+  数学: "light-dark(#4f83c4, #8aafcb)",
+  英語: "light-dark(#9782c7, #af9fc5)",
+  国語: "light-dark(#d47c8b, #d19caa)",
+  化学: "light-dark(#53a68d, #87b8a4)",
+  物理: "light-dark(#d69a52, #d2ad7c)",
+  世界史: "light-dark(#a78367, #b99585)",
+  地理: "light-dark(#b2a241, #b9bd85)",
+  その他: "light-dark(#788493, #98a6b0)",
+  未分類: "light-dark(#9aa2ac, #b7b7b7)",
 };
 export function subjectColor(subject: string) {
   if (SUBJECT_COLORS[subject]) return SUBJECT_COLORS[subject];
   let hash = 0;
   for (const c of subject) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
-  return `light-dark(hsl(${hash % 360} 38% 48%), hsl(0 0% ${50 + hash % 40}%))`;
+  return `light-dark(hsl(${hash % 360} 38% 48%), hsl(${hash % 360} 26% 68%))`;
 }
 export function tokyoDate(value: Date | string = new Date()): string {
   const date = typeof value === "string" ? new Date(value) : value;
