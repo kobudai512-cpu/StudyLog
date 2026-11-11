@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("スマホ連携の案内・認証保護・APK配布", async ({ page, request }) => {
   await page.goto("/widget");
   await expect(
-    page.getByRole("heading", { name: "今週を、ホーム画面に。" }),
+    page.getByRole("heading", { name: "スマホ連携" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "ログインして連携する" }),

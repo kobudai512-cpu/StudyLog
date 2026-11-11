@@ -63,7 +63,7 @@ test("デモ・フィルター・状態・更新とレスポンシブ表示", as
   await page.goto("/demo");
   await expect(
     page.getByText(
-      "架空の学習記録を表示しています。Notionの実データではありません。",
+      "サンプルの学習記録",
     ),
   ).toBeVisible();
   await expect(page.locator(".record-table tbody tr").first()).toBeVisible();
@@ -159,7 +159,7 @@ test("記録ポップアップ・推定プレビュー・デモ保存・閉じ�
     .fill("GUIからの架空の記録");
   await dialog.getByLabel("教科", { exact: true }).selectOption("物理");
   await dialog
-    .getByLabel("終了日時（日本時間）", { exact: true })
+    .getByLabel("終了日時", { exact: true })
     .fill("2026-10-22T02:31");
   await dialog.getByLabel("実績時間（時間）", { exact: true }).fill("1");
   await dialog.getByLabel("実績時間（分）", { exact: true }).fill("31");

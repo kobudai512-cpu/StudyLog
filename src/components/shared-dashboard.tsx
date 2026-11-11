@@ -137,7 +137,6 @@ export default function SharedDashboard({
       </header>
       <main>
         <h1>学習レポート</h1>
-        <p className="intro">個別の勉強ログと週の目標を確認できます。</p>
         <div className="shared-notice">
           <Leaf size={18} />
           <span>

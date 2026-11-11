@@ -7,7 +7,7 @@ export const viewport: Viewport = {
   ],
 };
 export const metadata: Metadata = {
-  title: "Winkle Study — 学びの積み重ねを、見える形に。",
+  title: "Winkle Study",
   description: "Notionの学習記録を振り返る、あなただけの勉強ダッシュボード。",
   robots: { index: false, follow: false },
 };

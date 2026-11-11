@@ -184,7 +184,7 @@ export default function GoalDialog({
             </fieldset>
             <div className="record-preview">
               <strong>自分に合ったペースで</strong>
-              <p>1分〜168時間。途中で目標を見直しても大丈夫です。</p>
+              <p>1分〜168時間</p>
             </div>
             {error && (
               <p className="notice error" role="alert">

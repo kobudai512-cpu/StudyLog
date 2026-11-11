@@ -282,7 +282,7 @@ export default function RecordDialog({
                 </select>
               </label>
               <label>
-                終了日時（日本時間）
+                終了日時
                 <input
                   type="datetime-local"
                   required

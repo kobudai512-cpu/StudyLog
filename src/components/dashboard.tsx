@@ -36,7 +36,6 @@ import RecordDialog from "./record-dialog";
 import MaterialRanking from "./material-ranking";
 import { filterMaterial } from "@/lib/materials";
 import ShareDialog from "./share-dialog";
-import StudyNavigation from "./study-navigation";
 import { demoSnapshot } from "@/lib/demo";
 import {
   addDays,
@@ -234,963 +233,896 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
       <a className="skip-link" href="#overview">
         本文へ移動
       </a>
-      <aside className="sidebar">
+      <header className="study-header">
         <a
           className="brand"
           href={mode === "demo" ? "/demo" : "/"}
           aria-label="Winkle Study ホーム"
         >
-          <span className="brand-icon">
-            <BookOpen size={21} />
-          </span>
-          <span>
-            Winkle<span className="brand-sub">Study</span>
-          </span>
+          <BookOpen size={19} /> Winkle Study
         </a>
-        <div className="workspace-label">学習ノート</div>
         {authenticated && (
-          <Link href="/widget" className="widget-link widget-link-sidebar">
-            スマホ連携 ↗
-          </Link>
-        )}
-        <StudyNavigation enabled={canRead} />
-        <div className="sidebar-bottom">
-          <div className="private-label">
-            <ShieldCheck size={15} />
-            個人用ワークスペース
-          </div>
-          {authenticated && (
+          <div className="study-account">
+            <Link href="/widget">スマホ連携</Link>
             <button className="logout" onClick={() => void signOut()}>
               <LogOut size={15} />
               ログアウト
             </button>
+          </div>
+        )}
+      </header>
+      <main id="overview" tabIndex={-1}>
+        <div className="heading-row">
+          <div>
+            <h1>Study Log</h1>
+          </div>
+          {canRead && (
+            <div className="page-actions">
+              {(authenticated || mode === "demo") && (
+                <ShareDialog demo={mode === "demo"} />
+              )}
+              <RecordDialog
+                mode={mode}
+                onSaved={(record) => {
+                  if (record)
+                    setData((current) =>
+                      current
+                        ? {
+                            ...current,
+                            records: [record, ...current.records],
+                          }
+                        : current,
+                    );
+                  else void load(false);
+                }}
+              />
+            </div>
           )}
         </div>
-      </aside>
-      <div className="main-shell">
-        <header className="topbar">
-          <span className="breadcrumb">
-            学習ノート <span>/</span> <strong>振り返り</strong>
-          </span>
-          <div className="topbar-right">
-            {today && (
-              <div className="page-context">
-                <div className="today-label">
-                  <CalendarDays size={17} />
-                  {today
-                    ? new Intl.DateTimeFormat("ja-JP", {
-                        dateStyle: "long",
-                        timeZone: "Asia/Tokyo",
-                      }).format(new Date(`${today}T12:00:00+09:00`))
-                    : "Asia/Tokyo"}
-                </div>
-              </div>
-            )}
-            <span className="private-pill">
-              <span />
-              非公開
-            </span>
-          </div>
-        </header>
-        <main id="overview" tabIndex={-1}>
-          <div className="heading-row">
+        {mode === "demo" && (
+          <div className="demo-banner">
             <div>
-              <h1>学習ノート</h1>
-              <p className="intro">記録を残して、学びのペースを確かめる。</p>
-              {authenticated && (
-                <Link href="/widget" className="widget-link widget-link-mobile">
-                  スマホ連携 ↗
-                </Link>
-              )}
+              <span className="demo-tag">DEMO</span>
+              <span>サンプルの学習記録</span>
             </div>
-            {canRead && (
-              <div className="page-actions">
-                {(authenticated || mode === "demo") && (
-                  <ShareDialog demo={mode === "demo"} />
-                )}
-                <RecordDialog
-                  mode={mode}
-                  onSaved={(record) => {
-                    if (record)
-                      setData((current) =>
-                        current
-                          ? {
-                              ...current,
-                              records: [record, ...current.records],
-                            }
-                          : current,
-                      );
-                    else void load(false);
-                  }}
-                />
+            <Link href="/">
+              本番接続へ <span aria-hidden>↗</span>
+            </Link>
+          </div>
+        )}
+        {!canRead ? (
+          <section className="login-card">
+            <span className="login-icon">
+              <BookOpen size={32} />
+            </span>
+            <h2>ログイン</h2>
+            {authReady ? (
+              <button className="primary" onClick={() => void signIn("google")}>
+                Googleでログイン
+              </button>
+            ) : (
+              <div className="setup-notice">
+                Googleログインの設定待ちです。
+                <br />
+                設定が完了するまで、デモで操作をお試しください。
               </div>
             )}
-          </div>
-          {mode === "demo" && (
-            <div className="demo-banner">
-              <div>
-                <span className="demo-tag">DEMO</span>
-                <span>
-                  架空の学習記録を表示しています。Notionの実データではありません。
-                </span>
+            <a className="demo-link" href="/demo">
+              デモで試す
+            </a>
+            <small>
+              <ShieldCheck size={14} />
+              許可したGoogleアカウントだけが実データにアクセスできます。
+            </small>
+          </section>
+        ) : (
+          <>
+            <section className="toolbar" aria-label="表示条件">
+              <div className="period-tabs">
+                {PERIODS.map(([value, label]) => (
+                  <button
+                    key={value}
+                    disabled={!today}
+                    aria-pressed={period === value}
+                    className={period === value ? "selected" : ""}
+                    onClick={() => selectPeriod(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-              <Link href="/">
-                本番接続へ <span aria-hidden>↗</span>
-              </Link>
-            </div>
-          )}
-          {!canRead ? (
-            <section className="login-card">
-              <span className="login-icon">
-                <BookOpen size={32} />
-              </span>
-              <h2>学習の記録を、ひとつの場所に。</h2>
-              <p>
-                NotionのStudy Logをつないで、
-                <br />
-                学習時間・教材・週の目標を振り返れます。
-              </p>
-              {authReady ? (
+              <div className="toolbar-right">
+                <label className="subject-select material-filter">
+                  <span>教材</span>
+                  <select
+                    aria-label="教材"
+                    value={material}
+                    onChange={(e) => {
+                      setMaterial(e.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="all">すべての教材</option>
+                    <option value="unset">教材未設定</option>
+                    {materials.map((name) => (
+                      <option key={name} value={`book:${name}`}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="subject-select">
+                  <span>教科</span>
+                  <select
+                    aria-label="教科"
+                    value={subject}
+                    onChange={(e) => {
+                      setSubject(e.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="all">すべての教科</option>
+                    {subjects.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
                 <button
-                  className="primary"
-                  onClick={() => void signIn("google")}
+                  className="refresh-button"
+                  onClick={() => void load(true)}
+                  disabled={loading}
                 >
-                  Googleでログイン
+                  <RefreshCw size={15} className={loading ? "spinning" : ""} />
+                  {loading ? "更新中" : "更新"}
                 </button>
-              ) : (
-                <div className="setup-notice">
-                  Googleログインの設定待ちです。
-                  <br />
-                  設定が完了するまで、デモで操作をお試しください。
-                </div>
-              )}
-              <a className="demo-link" href="/demo">
-                デモで試す
-              </a>
-              <small>
-                <ShieldCheck size={14} />
-                許可したGoogleアカウントだけが実データにアクセスできます。
-              </small>
+              </div>
             </section>
-          ) : (
-            <>
-              <section className="toolbar" aria-label="表示条件">
-                <div className="period-tabs">
-                  {PERIODS.map(([value, label]) => (
-                    <button
-                      key={value}
-                      disabled={!today}
-                      aria-pressed={period === value}
-                      className={period === value ? "selected" : ""}
-                      onClick={() => selectPeriod(value)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div className="toolbar-right">
-                  <label className="subject-select material-filter">
-                    <span>教材</span>
-                    <select
-                      aria-label="教材"
-                      value={material}
-                      onChange={(e) => {
-                        setMaterial(e.target.value);
-                        setPage(1);
-                      }}
-                    >
-                      <option value="all">すべての教材</option>
-                      <option value="unset">教材未設定</option>
-                      {materials.map((name) => (
-                        <option key={name} value={`book:${name}`}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="subject-select">
-                    <span>教科</span>
-                    <select
-                      aria-label="教科"
-                      value={subject}
-                      onChange={(e) => {
-                        setSubject(e.target.value);
-                        setPage(1);
-                      }}
-                    >
-                      <option value="all">すべての教科</option>
-                      {subjects.map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
-                  </label>
+            <div className="study-actions">
+              {period === "week" && (
+                <div className="week-navigation" aria-label="週の移動">
                   <button
                     className="refresh-button"
-                    onClick={() => void load(true)}
-                    disabled={loading}
+                    aria-label="前の週"
+                    disabled={!today}
+                    onClick={() => {
+                      setWeekOffset(weekOffset - 1);
+                      setPage(1);
+                    }}
                   >
-                    <RefreshCw
-                      size={15}
-                      className={loading ? "spinning" : ""}
-                    />
-                    {loading ? "更新中" : "更新"}
+                    <ChevronLeft size={16} /> 前週
                   </button>
+                  <span>
+                    {range.start} 〜 {range.end}
+                  </span>
+                  <button
+                    className="refresh-button"
+                    aria-label="次の週"
+                    disabled={weekOffset >= 0}
+                    onClick={() => {
+                      setWeekOffset(weekOffset + 1);
+                      setPage(1);
+                    }}
+                  >
+                    翌週 <ChevronRight size={16} />
+                  </button>
+                  {weekOffset < 0 && (
+                    <button
+                      className="refresh-button"
+                      onClick={() => {
+                        setWeekOffset(0);
+                        setPage(1);
+                      }}
+                    >
+                      今週へ戻る
+                    </button>
+                  )}
                 </div>
-              </section>
-              <div className="study-actions">
-                {period === "week" && (
-                  <div className="week-navigation" aria-label="週の移動">
-                    <button
-                      className="refresh-button"
-                      aria-label="前の週"
-                      disabled={!today}
-                      onClick={() => {
-                        setWeekOffset(weekOffset - 1);
-                        setPage(1);
-                      }}
-                    >
-                      <ChevronLeft size={16} /> 前週
-                    </button>
-                    <span>
-                      {range.start} 〜 {range.end}
-                    </span>
-                    <button
-                      className="refresh-button"
-                      aria-label="次の週"
-                      disabled={weekOffset >= 0}
-                      onClick={() => {
-                        setWeekOffset(weekOffset + 1);
-                        setPage(1);
-                      }}
-                    >
-                      翌週 <ChevronRight size={16} />
-                    </button>
-                    {weekOffset < 0 && (
-                      <button
-                        className="refresh-button"
-                        onClick={() => {
-                          setWeekOffset(0);
+              )}
+            </div>
+            {period === "custom" && (
+              <div className="custom-range">
+                <label>
+                  開始日
+                  <input
+                    type="date"
+                    aria-label="開始日"
+                    value={custom.start}
+                    onChange={(e) => {
+                      setCustom({ ...custom, start: e.target.value });
+                      setPage(1);
+                    }}
+                  />
+                </label>
+                <span>—</span>
+                <label>
+                  終了日
+                  <input
+                    type="date"
+                    aria-label="終了日"
+                    value={custom.end}
+                    onChange={(e) => {
+                      setCustom({ ...custom, end: e.target.value });
+                      setPage(1);
+                    }}
+                  />
+                </label>
+                <small>最大366日</small>
+              </div>
+            )}
+            {material !== "all" && (
+              <div className="material-filter-note">
+                {material === "unset" ? "教材未設定" : material.slice(5)}{" "}
+                の実績を表示中。週目標の達成率はすべての教材・教科で計算します。
+                <button
+                  className="refresh-button"
+                  onClick={() => {
+                    setMaterial("all");
+                    setPage(1);
+                  }}
+                >
+                  教材の絞り込みを解除
+                </button>
+              </div>
+            )}
+            <div className="sync-line">
+              <span>
+                {loading
+                  ? "学習記録を取得しています…"
+                  : data
+                    ? `最終${mode === "demo" ? "デモ更新" : "成功同期"}：${new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Tokyo" }).format(new Date(data.syncedAt))}`
+                    : "未同期"}
+              </span>
+              <span>月曜始まり · Asia/Tokyo</span>
+            </div>
+            {rangeError && (
+              <div role="alert" className="notice error">
+                {rangeError}
+              </div>
+            )}
+            {shownError && (
+              <div role="alert" className="notice error">
+                {shownError}
+                {data && <span> 最終成功時のデータを保持しています。</span>}
+              </div>
+            )}
+            {data?.stale && !shownError && (
+              <div className="notice" role="status">
+                同期できなかったため、前回成功時のデータを表示しています。
+              </div>
+            )}
+            {issues > 0 && (
+              <div className="notice" role="status">
+                日付または時間が不正な{issues}
+                件を集計から除外しました。Notionの記録を確認してください。件数は取得した全期間が対象です。
+              </div>
+            )}
+            {(data?.duplicates ?? 0) > 0 && (
+              <div className="notice">
+                重複した{data!.duplicates}
+                件を除外し、同一ページの最新の記録を採用しました。
+              </div>
+            )}
+            {loading && !data ? (
+              <div className="loading-state" role="status">
+                <RefreshCw className="spinning" />
+                学習記録を読み込んでいます…
+              </div>
+            ) : summary && displayedWeek && allWeek && data ? (
+              <>
+                <section className="stats-grid" aria-label="週のサマリー">
+                  <article className="stat-card featured">
+                    <div className="stat-label">
+                      <span>
+                        {isPastWeek ? "表示週の学習時間" : "今週の学習時間"}
+                      </span>
+                      <span className="stat-icon">
+                        <Clock3 size={18} />
+                      </span>
+                    </div>
+                    <div className="stat-value">
+                      {Math.floor(displayedWeek.current.total / 60)}
+                      <span>時間</span>{" "}
+                      {Number((displayedWeek.current.total % 60).toFixed(1))}
+                      <span>分</span>
+                    </div>
+                    <div className="stat-foot">
+                      {displayedWeek.current.records.length}件の記録{" "}
+                      <span className="tiny-dot" />{" "}
+                      {subject === "all" ? "すべての教科" : subject}
+                    </div>
+                  </article>
+                  <article className="stat-card">
+                    <div className="stat-label">
+                      <span>
+                        {isPastWeek ? "表示週の記録日数" : "今週の記録日数"}
+                      </span>
+                      <span className="stat-icon">
+                        <CalendarDays size={18} />
+                      </span>
+                    </div>
+                    <div className="stat-value">
+                      {displayedWeek.current.recordedDays}
+                      <span>日</span>
+                      <small>/ {displayedWeek.current.calendarDays}日</small>
+                    </div>
+                    <div className="stat-foot">
+                      {isPastWeek
+                        ? "月曜日から日曜日まで"
+                        : "月曜日から今日まで"}{" "}
+                      · 未記録日は含めません
+                    </div>
+                  </article>
+                  <article className="stat-card">
+                    <div className="stat-label">
+                      <span>前週の同期間との差</span>
+                      <span className="stat-icon">
+                        {displayedWeek.difference >= 0 ? (
+                          <ArrowUpRight size={18} />
+                        ) : (
+                          <ArrowDownRight size={18} />
+                        )}
+                      </span>
+                    </div>
+                    <div className="stat-value difference">
+                      {displayedWeek.difference > 0
+                        ? "+"
+                        : displayedWeek.difference < 0
+                          ? "−"
+                          : ""}
+                      {Number(
+                        (Math.abs(displayedWeek.difference) / 60).toFixed(1),
+                      )}
+                      <span>時間</span>
+                      {displayedWeek.percent !== null && (
+                        <em>
+                          {displayedWeek.percent > 0 ? "+" : ""}
+                          {Math.round(displayedWeek.percent)}%
+                        </em>
+                      )}
+                    </div>
+                    <div className="stat-foot">
+                      比較：{displayedWeek.previous.start.slice(5)} ～{" "}
+                      {displayedWeek.previous.end.slice(5)}
+                      {displayedWeek.percent === null
+                        ? "（前週0分・増加率なし）"
+                        : ""}
+                    </div>
+                  </article>
+                </section>
+                <WeeklyGoal
+                  total={allWeek.total}
+                  data={data}
+                  weekStart={goalWeekStart}
+                  onSaved={(goal) => {
+                    setData((current) =>
+                      current
+                        ? {
+                            ...current,
+                            goals: [
+                              ...(current.goals ?? []).filter(
+                                (g) => g.weekStart !== goal.weekStart,
+                              ),
+                              goal,
+                            ],
+                          }
+                        : current,
+                    );
+                  }}
+                />
+                <div
+                  className="section-heading"
+                  id="study-report"
+                  tabIndex={-1}
+                >
+                  <div>
+                    <h2>
+                      {isPastWeek
+                        ? "表示週"
+                        : PERIODS.find(([p]) => p === period)?.[1]}
+                      の学習レポート
+                    </h2>
+                    <p>
+                      {range.start} ～ {range.end} <span>·</span> 合計{" "}
+                      {minutesLabel(summary.total)}
+                    </p>
+                  </div>
+                </div>
+                {summary.records.length === 0 && (
+                  <div className="empty-state">
+                    <BookOpen size={28} />
+                    <h3>この期間の記録はまだありません</h3>
+                    <p>期間や教科を変えて確認できます。</p>
+                  </div>
+                )}
+                <div className="charts-grid">
+                  {range.start === range.end ? (
+                    <HourlyChart
+                      records={records}
+                      date={range.start}
+                      subject={subject}
+                    />
+                  ) : (
+                    <section className="panel daily-panel">
+                      <div className="panel-heading">
+                        <div>
+                          <h3>日々の学習時間</h3>
+                        </div>
+                        <span className="unit-tag">単位：分</span>
+                      </div>
+                      <div className="chart-container">
+                        <ResponsiveContainer
+                          width="100%"
+                          height="100%"
+                          minWidth={0}
+                        >
+                          <BarChart
+                            data={summary.daily}
+                            margin={{
+                              top: 15,
+                              right: 6,
+                              bottom: 0,
+                              left: -24,
+                            }}
+                            accessibilityLayer
+                          >
+                            <CartesianGrid
+                              vertical={false}
+                              stroke="var(--border)"
+                            />
+                            <XAxis
+                              dataKey="label"
+                              tickLine={false}
+                              axisLine={false}
+                              tick={{ fill: "var(--muted)", fontSize: 11 }}
+                              minTickGap={22}
+                            />
+                            <YAxis
+                              tickLine={false}
+                              axisLine={false}
+                              tick={{ fill: "var(--muted)", fontSize: 11 }}
+                            />
+                            <Tooltip
+                              cursor={{ fill: "var(--subtle)" }}
+                              formatter={(value) => `${value}分`}
+                              contentStyle={{
+                                border: "1px solid var(--border)",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                            />
+                            {summary.breakdown.map((s) => (
+                              <Bar
+                                key={s.name}
+                                dataKey={s.name}
+                                stackId="study"
+                                isAnimationActive={false}
+                                fill={s.color}
+                                maxBarSize={38}
+                              />
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="chart-legend">
+                        {summary.breakdown.map((s) => (
+                          <span key={s.name}>
+                            <i style={{ background: s.color }} />
+                            {s.name}
+                          </span>
+                        ))}
+                      </div>
+                      <details className="data-details">
+                        <summary>日別の数値を表で見る</summary>
+                        <div className="table-scroll">
+                          <table>
+                            <caption className="sr-only">
+                              日別の学習時間（分）
+                            </caption>
+                            <thead>
+                              <tr>
+                                <th>日付</th>
+                                {summary.breakdown.map((s) => (
+                                  <th key={s.name}>{s.name}</th>
+                                ))}
+                                <th>合計</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {summary.daily.map((d) => (
+                                <tr key={d.date}>
+                                  <td>{d.date}</td>
+                                  {summary.breakdown.map((s) => (
+                                    <td key={s.name}>
+                                      {d.recorded
+                                        ? String(
+                                            (d as Record<string, unknown>)[
+                                              s.name
+                                            ] ?? 0,
+                                          )
+                                        : "—"}
+                                    </td>
+                                  ))}
+                                  <td>
+                                    {d.recorded ? `${d.total}分` : "未記録"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    </section>
+                  )}
+                  <section className="panel subject-panel">
+                    <div className="panel-heading">
+                      <div>
+                        <h3>教科のバランス</h3>
+                      </div>
+                    </div>
+                    <div className="donut-wrap">
+                      <ResponsiveContainer
+                        width="100%"
+                        height={190}
+                        minWidth={0}
+                      >
+                        <PieChart accessibilityLayer>
+                          <Pie
+                            data={summary.breakdown}
+                            dataKey="minutes"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="64%"
+                            outerRadius="86%"
+                            isAnimationActive={false}
+                            paddingAngle={3}
+                            stroke="none"
+                          >
+                            {summary.breakdown.map((s) => (
+                              <Cell key={s.name} fill={s.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value) => `${value}分`}
+                            contentStyle={{ borderRadius: 6, fontSize: 12 }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="donut-label">
+                        <span>合計</span>
+                        <strong>
+                          {Number((summary.total / 60).toFixed(1))}
+                          <small>時間</small>
+                        </strong>
+                      </div>
+                    </div>
+                    <ul className="subject-list">
+                      {summary.breakdown.map((s) => (
+                        <li key={s.name}>
+                          <span>
+                            <i style={{ background: s.color }} />
+                            {s.name}
+                          </span>
+                          <strong>{minutesLabel(s.minutes)}</strong>
+                          <small>{s.share.toFixed(1)}%</small>
+                        </li>
+                      ))}
+                    </ul>
+                    {summary.breakdown.length === 0 && (
+                      <p className="muted centered">
+                        内訳を表示する記録がありません
+                      </p>
+                    )}
+                  </section>
+                  <div className="period-average">
+                    <span>記録日あたりの平均</span>
+                    <strong>
+                      {summary.recordedDays
+                        ? minutesLabel(summary.total / summary.recordedDays)
+                        : "記録なし"}
+                    </strong>
+                    <span>この期間の記録 {summary.recordedDays}日</span>
+                  </div>
+                </div>
+                <section
+                  className="panel records-panel"
+                  id="records"
+                  tabIndex={-1}
+                >
+                  <div className="panel-heading">
+                    <div>
+                      <h3>
+                        学習記録{" "}
+                        <span className="count-badge">
+                          {summary.records.length}
+                        </span>
+                      </h3>
+                    </div>
+                    <label className="record-sort">
+                      並び順
+                      <select
+                        aria-label="記録の並び順"
+                        value={recordSort}
+                        onChange={(e) => {
+                          setRecordSort(e.target.value);
                           setPage(1);
                         }}
                       >
-                        今週へ戻る
-                      </button>
-                    )}
+                        <option value="date-desc">日付が新しい順</option>
+                        <option value="date-asc">日付が古い順</option>
+                        <option value="time-desc">学習時間が多い順</option>
+                        <option value="time-asc">学習時間が少ない順</option>
+                      </select>
+                    </label>
                   </div>
-                )}
-              </div>
-              {period === "custom" && (
-                <div className="custom-range">
-                  <label>
-                    開始日
-                    <input
-                      type="date"
-                      aria-label="開始日"
-                      value={custom.start}
-                      onChange={(e) => {
-                        setCustom({ ...custom, start: e.target.value });
-                        setPage(1);
-                      }}
-                    />
-                  </label>
-                  <span>—</span>
-                  <label>
-                    終了日
-                    <input
-                      type="date"
-                      aria-label="終了日"
-                      value={custom.end}
-                      onChange={(e) => {
-                        setCustom({ ...custom, end: e.target.value });
-                        setPage(1);
-                      }}
-                    />
-                  </label>
-                  <small>最大366日</small>
-                </div>
-              )}
-              {material !== "all" && (
-                <div className="material-filter-note">
-                  {material === "unset" ? "教材未設定" : material.slice(5)}{" "}
-                  の実績を表示中。週目標の達成率はすべての教材・教科で計算します。
-                  <button
-                    className="refresh-button"
-                    onClick={() => {
-                      setMaterial("all");
-                      setPage(1);
-                    }}
-                  >
-                    教材の絞り込みを解除
-                  </button>
-                </div>
-              )}
-              <div className="sync-line">
-                <span>
-                  {loading
-                    ? "学習記録を取得しています…"
-                    : data
-                      ? `最終${mode === "demo" ? "デモ更新" : "成功同期"}：${new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Tokyo" }).format(new Date(data.syncedAt))}（日本時間）`
-                      : "未同期"}
-                </span>
-                <span>月曜始まり · Asia/Tokyo</span>
-              </div>
-              {rangeError && (
-                <div role="alert" className="notice error">
-                  {rangeError}
-                </div>
-              )}
-              {shownError && (
-                <div role="alert" className="notice error">
-                  {shownError}
-                  {data && <span> 最終成功時のデータを保持しています。</span>}
-                </div>
-              )}
-              {data?.stale && !shownError && (
-                <div className="notice" role="status">
-                  同期できなかったため、前回成功時のデータを表示しています。
-                </div>
-              )}
-              {issues > 0 && (
-                <div className="notice" role="status">
-                  日付または時間が不正な{issues}
-                  件を集計から除外しました。Notionの記録を確認してください。件数は取得した全期間が対象です。
-                </div>
-              )}
-              {(data?.duplicates ?? 0) > 0 && (
-                <div className="notice">
-                  重複した{data!.duplicates}
-                  件を除外し、同一ページの最新の記録を採用しました。
-                </div>
-              )}
-              {loading && !data ? (
-                <div className="loading-state" role="status">
-                  <RefreshCw className="spinning" />
-                  学習記録を読み込んでいます…
-                </div>
-              ) : summary && displayedWeek && allWeek && data ? (
-                <>
-                  <section className="stats-grid" aria-label="週のサマリー">
-                    <article className="stat-card featured">
-                      <div className="stat-label">
-                        <span>
-                          {isPastWeek ? "表示週の学習時間" : "今週の学習時間"}
-                        </span>
-                        <span className="stat-icon">
-                          <Clock3 size={18} />
-                        </span>
-                      </div>
-                      <div className="stat-value">
-                        {Math.floor(displayedWeek.current.total / 60)}
-                        <span>時間</span>{" "}
-                        {Number((displayedWeek.current.total % 60).toFixed(1))}
-                        <span>分</span>
-                      </div>
-                      <div className="stat-foot">
-                        {displayedWeek.current.records.length}件の記録{" "}
-                        <span className="tiny-dot" />{" "}
-                        {subject === "all" ? "すべての教科" : subject}
-                      </div>
-                    </article>
-                    <article className="stat-card">
-                      <div className="stat-label">
-                        <span>
-                          {isPastWeek ? "表示週の記録日数" : "今週の記録日数"}
-                        </span>
-                        <span className="stat-icon">
-                          <CalendarDays size={18} />
-                        </span>
-                      </div>
-                      <div className="stat-value">
-                        {displayedWeek.current.recordedDays}
-                        <span>日</span>
-                        <small>/ {displayedWeek.current.calendarDays}日</small>
-                      </div>
-                      <div className="stat-foot">
-                        {isPastWeek
-                          ? "月曜日から日曜日まで"
-                          : "月曜日から今日まで"}{" "}
-                        · 未記録日は含めません
-                      </div>
-                    </article>
-                    <article className="stat-card">
-                      <div className="stat-label">
-                        <span>前週の同期間との差</span>
-                        <span className="stat-icon">
-                          {displayedWeek.difference >= 0 ? (
-                            <ArrowUpRight size={18} />
-                          ) : (
-                            <ArrowDownRight size={18} />
-                          )}
-                        </span>
-                      </div>
-                      <div className="stat-value difference">
-                        {displayedWeek.difference > 0
-                          ? "+"
-                          : displayedWeek.difference < 0
-                            ? "−"
-                            : ""}
-                        {Number(
-                          (Math.abs(displayedWeek.difference) / 60).toFixed(1),
-                        )}
-                        <span>時間</span>
-                        {displayedWeek.percent !== null && (
-                          <em>
-                            {displayedWeek.percent > 0 ? "+" : ""}
-                            {Math.round(displayedWeek.percent)}%
-                          </em>
-                        )}
-                      </div>
-                      <div className="stat-foot">
-                        比較：{displayedWeek.previous.start.slice(5)} ～{" "}
-                        {displayedWeek.previous.end.slice(5)}
-                        {displayedWeek.percent === null
-                          ? "（前週0分・増加率なし）"
-                          : ""}
-                      </div>
-                    </article>
-                  </section>
-                  <WeeklyGoal
-                    total={allWeek.total}
-                    data={data}
-                    weekStart={goalWeekStart}
-                    onSaved={(goal) => {
-                      setData((current) =>
-                        current
-                          ? {
-                              ...current,
-                              goals: [
-                                ...(current.goals ?? []).filter(
-                                  (g) => g.weekStart !== goal.weekStart,
-                                ),
-                                goal,
-                              ],
-                            }
-                          : current,
-                      );
-                    }}
-                  />
-                  <div
-                    className="section-heading"
-                    id="study-report"
-                    tabIndex={-1}
-                  >
-                    <div>
-                      <h2>
-                        {isPastWeek
-                          ? "表示週"
-                          : PERIODS.find(([p]) => p === period)?.[1]}
-                        の学習レポート
-                      </h2>
-                      <p>
-                        {range.start} ～ {range.end} <span>·</span> 合計{" "}
-                        {minutesLabel(summary.total)}
-                      </p>
-                    </div>
-                  </div>
-                  {summary.records.length === 0 && (
-                    <div className="empty-state">
-                      <BookOpen size={28} />
-                      <h3>この期間の記録はまだありません</h3>
-                      <p>
-                        未記録の日は、未実施という意味ではありません。期間や教科を変えて確認できます。
-                      </p>
-                    </div>
-                  )}
-                  <div className="charts-grid">
-                    {range.start === range.end ? (
-                      <HourlyChart
-                        records={records}
-                        date={range.start}
-                        subject={subject}
-                      />
-                    ) : (
-                      <section className="panel daily-panel">
-                        <div className="panel-heading">
-                          <div>
-                            <h3>日々の学習時間</h3>
-                            <p>教科ごとの積み重ねを振り返る</p>
-                          </div>
-                          <span className="unit-tag">単位：分</span>
-                        </div>
-                        <div className="chart-container">
-                          <ResponsiveContainer
-                            width="100%"
-                            height="100%"
-                            minWidth={0}
-                          >
-                            <BarChart
-                              data={summary.daily}
-                              margin={{
-                                top: 15,
-                                right: 6,
-                                bottom: 0,
-                                left: -24,
-                              }}
-                              accessibilityLayer
-                            >
-                              <CartesianGrid
-                                vertical={false}
-                                stroke="var(--border)"
-                              />
-                              <XAxis
-                                dataKey="label"
-                                tickLine={false}
-                                axisLine={false}
-                                tick={{ fill: "var(--muted)", fontSize: 11 }}
-                                minTickGap={22}
-                              />
-                              <YAxis
-                                tickLine={false}
-                                axisLine={false}
-                                tick={{ fill: "var(--muted)", fontSize: 11 }}
-                              />
-                              <Tooltip
-                                cursor={{ fill: "var(--subtle)" }}
-                                formatter={(value) => `${value}分`}
-                                contentStyle={{
-                                  border: "1px solid var(--border)",
-                                  borderRadius: 6,
-                                  fontSize: 12,
-                                }}
-                              />
-                              {summary.breakdown.map((s) => (
-                                <Bar
-                                  key={s.name}
-                                  dataKey={s.name}
-                                  stackId="study"
-                                  isAnimationActive={false}
-                                  fill={s.color}
-                                  maxBarSize={38}
-                                />
-                              ))}
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="chart-legend">
-                          {summary.breakdown.map((s) => (
-                            <span key={s.name}>
-                              <i style={{ background: s.color }} />
-                              {s.name}
-                            </span>
-                          ))}
-                        </div>
-                        <details className="data-details">
-                          <summary>日別の数値を表で見る</summary>
-                          <div className="table-scroll">
-                            <table>
-                              <caption className="sr-only">
-                                日別の学習時間（分）
-                              </caption>
-                              <thead>
-                                <tr>
-                                  <th>日付</th>
-                                  {summary.breakdown.map((s) => (
-                                    <th key={s.name}>{s.name}</th>
-                                  ))}
-                                  <th>合計</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {summary.daily.map((d) => (
-                                  <tr key={d.date}>
-                                    <td>{d.date}</td>
-                                    {summary.breakdown.map((s) => (
-                                      <td key={s.name}>
-                                        {d.recorded
-                                          ? String(
-                                              (d as Record<string, unknown>)[
-                                                s.name
-                                              ] ?? 0,
-                                            )
-                                          : "—"}
-                                      </td>
-                                    ))}
-                                    <td>
-                                      {d.recorded ? `${d.total}分` : "未記録"}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </details>
-                      </section>
-                    )}
-                    <section className="panel subject-panel">
-                      <div className="panel-heading">
-                        <div>
-                          <h3>教科のバランス</h3>
-                          <p>学習時間の内訳</p>
-                        </div>
-                      </div>
-                      <div className="donut-wrap">
-                        <ResponsiveContainer
-                          width="100%"
-                          height={190}
-                          minWidth={0}
-                        >
-                          <PieChart accessibilityLayer>
-                            <Pie
-                              data={summary.breakdown}
-                              dataKey="minutes"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              innerRadius="64%"
-                              outerRadius="86%"
-                              isAnimationActive={false}
-                              paddingAngle={3}
-                              stroke="none"
-                            >
-                              {summary.breakdown.map((s) => (
-                                <Cell key={s.name} fill={s.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value) => `${value}分`}
-                              contentStyle={{ borderRadius: 6, fontSize: 12 }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <div className="donut-label">
-                          <span>合計</span>
-                          <strong>
-                            {Number((summary.total / 60).toFixed(1))}
-                            <small>時間</small>
-                          </strong>
-                        </div>
-                      </div>
-                      <ul className="subject-list">
-                        {summary.breakdown.map((s) => (
-                          <li key={s.name}>
-                            <span>
-                              <i style={{ background: s.color }} />
-                              {s.name}
-                            </span>
-                            <strong>{minutesLabel(s.minutes)}</strong>
-                            <small>{s.share.toFixed(1)}%</small>
-                          </li>
-                        ))}
-                      </ul>
-                      {summary.breakdown.length === 0 && (
-                        <p className="muted centered">
-                          内訳を表示する記録がありません
-                        </p>
-                      )}
-                    </section>
-                    <div className="period-average">
-                      <span>記録日あたりの平均</span>
-                      <strong>
-                        {summary.recordedDays
-                          ? minutesLabel(summary.total / summary.recordedDays)
-                          : "記録なし"}
-                      </strong>
-                      <span>この期間の記録 {summary.recordedDays}日</span>
-                    </div>
-                  </div>
-                  <section
-                    className="panel records-panel"
-                    id="records"
-                    tabIndex={-1}
-                  >
-                    <div className="panel-heading">
-                      <div>
-                        <h3>
-                          学習記録{" "}
-                          <span className="count-badge">
-                            {summary.records.length}
-                          </span>
-                        </h3>
-                        <p>選択した期間・教科・教材の記録</p>
-                      </div>
-                      <label className="record-sort">
-                        並び順
-                        <select
-                          aria-label="記録の並び順"
-                          value={recordSort}
-                          onChange={(e) => {
-                            setRecordSort(e.target.value);
-                            setPage(1);
-                          }}
-                        >
-                          <option value="date-desc">日付が新しい順</option>
-                          <option value="date-asc">日付が古い順</option>
-                          <option value="time-desc">学習時間が多い順</option>
-                          <option value="time-asc">学習時間が少ない順</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div className="record-table-wrap">
-                      <table className="record-table" role="table">
-                        <caption className="sr-only">学習記録の一覧</caption>
-                        <thead role="rowgroup">
-                          <tr role="row">
-                            <th role="columnheader">学習日</th>
-                            <th role="columnheader">教科</th>
-                            <th role="columnheader">学習内容・単元</th>
-                            <th role="columnheader">学習時間</th>
-                            <th role="columnheader">
-                              <span className="sr-only">元ページ</span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody role="rowgroup">
-                          {orderedRecords
-                            .slice((page - 1) * 15, page * 15)
-                            .map((r) => (
-                              <tr key={r.id} role="row">
-                                <td
-                                  role="cell"
-                                  className="record-date"
-                                  data-label="学習日"
+                  <div className="record-table-wrap">
+                    <table className="record-table" role="table">
+                      <caption className="sr-only">学習記録の一覧</caption>
+                      <thead role="rowgroup">
+                        <tr role="row">
+                          <th role="columnheader">学習日</th>
+                          <th role="columnheader">教科</th>
+                          <th role="columnheader">学習内容・単元</th>
+                          <th role="columnheader">学習時間</th>
+                          <th role="columnheader">
+                            <span className="sr-only">元ページ</span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody role="rowgroup">
+                        {orderedRecords
+                          .slice((page - 1) * 15, page * 15)
+                          .map((r) => (
+                            <tr key={r.id} role="row">
+                              <td
+                                role="cell"
+                                className="record-date"
+                                data-label="学習日"
+                              >
+                                {r.date.slice(5).replace("-", "/")}
+                              </td>
+                              <td role="cell">
+                                <span
+                                  className="subject-badge"
+                                  style={{
+                                    color: "var(--ink)",
+                                    borderLeft: `3px solid ${subjectColor(r.subject)}`,
+                                    background: "var(--subtle)",
+                                  }}
                                 >
-                                  {r.date.slice(5).replace("-", "/")}
-                                </td>
-                                <td role="cell">
-                                  <span
-                                    className="subject-badge"
-                                    style={{
-                                      color: "var(--ink)",
-                                      borderLeft: `3px solid ${subjectColor(r.subject)}`,
-                                      background: "var(--subtle)",
-                                    }}
+                                  {r.subject}
+                                </span>
+                              </td>
+                              <td role="cell" className="record-title">
+                                <strong>{r.title}</strong>
+                                <span className="record-material">
+                                  {r.material || "教材未設定"}
+                                </span>
+                                {r.unit && <small>{r.unit}</small>}
+                              </td>
+                              <td role="cell" className="record-time">
+                                {minutesLabel(r.durationMinutes)}
+                                {r.recordedDurationMinutes !== undefined && (
+                                  <small className="range-time">
+                                    期間内（元の記録：
+                                    {minutesLabel(r.recordedDurationMinutes)}）
+                                  </small>
+                                )}
+                              </td>
+                              <td role="cell">
+                                {r.notionUrl ? (
+                                  <a
+                                    className="notion-link"
+                                    href={r.notionUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={`${r.title}をNotionで開く`}
                                   >
-                                    {r.subject}
-                                  </span>
-                                </td>
-                                <td role="cell" className="record-title">
-                                  <strong>{r.title}</strong>
-                                  <span className="record-material">
-                                    {r.material || "教材未設定"}
-                                  </span>
-                                  {r.unit && <small>{r.unit}</small>}
-                                </td>
-                                <td role="cell" className="record-time">
-                                  {minutesLabel(r.durationMinutes)}
-                                  {r.recordedDurationMinutes !== undefined && (
-                                    <small className="range-time">
-                                      期間内（元の記録：
-                                      {minutesLabel(r.recordedDurationMinutes)}
-                                      ）
-                                    </small>
-                                  )}
-                                </td>
-                                <td role="cell">
-                                  {r.notionUrl ? (
-                                    <a
-                                      className="notion-link"
-                                      href={r.notionUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      aria-label={`${r.title}をNotionで開く`}
-                                    >
-                                      <ExternalLink size={15} />
-                                    </a>
-                                  ) : (
-                                    <span className="sample-label">架空</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    {summary.records.length === 0 && (
-                      <p className="empty-records">
-                        この条件の記録はありません。
-                      </p>
-                    )}
-                    <div className="pagination">
-                      <span>
-                        {summary.records.length}件中{" "}
-                        {summary.records.length
-                          ? `${(page - 1) * 15 + 1}〜${Math.min(page * 15, summary.records.length)}件`
-                          : "0件"}
-                      </span>
-                      <div>
-                        <button
-                          aria-label="前のページ"
-                          disabled={page <= 1}
-                          onClick={() => setPage(page - 1)}
-                        >
-                          <ChevronLeft size={16} />
-                        </button>
-                        <span>
-                          {page} /{" "}
-                          {Math.max(1, Math.ceil(summary.records.length / 15))}
-                        </span>
-                        <button
-                          aria-label="次のページ"
-                          disabled={page * 15 >= summary.records.length}
-                          onClick={() => setPage(page + 1)}
-                        >
-                          <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </section>
-                  <MaterialRanking
-                    records={baseRecords}
-                    range={range}
-                    subject={subject}
-                    onSelect={(value) => {
-                      setMaterial(value);
-                      setPage(1);
-                      document.getElementById("overview")?.focus();
-                    }}
-                  />
-                  <StudyCalendar
-                    records={records}
-                    month={calendarMonth || today.slice(0, 7)}
-                    onMonth={setCalendarMonth}
-                    subject={subject}
-                    today={today}
-                    selectedDate={
-                      range.start === range.end ? range.start : undefined
-                    }
-                    onDay={(date) => {
-                      setCustom({ start: date, end: date });
-                      setPeriod("custom");
-                      setPage(1);
-                      requestAnimationFrame(() =>
-                        document.getElementById("study-report")?.focus(),
-                      );
-                    }}
-                  />
-                  <section
-                    id="weekly"
-                    tabIndex={-1}
-                    className="panel weekly-panel"
-                  >
-                    <div className="panel-heading">
-                      <div>
-                        <h3>週ごとの学習リズム</h3>
-                        <p>直近8週間 · 今週は今日まで</p>
-                      </div>
-                      <span className="unit-tag">単位：分</span>
-                    </div>
-                    <div className="weekly-chart">
-                      <ResponsiveContainer
-                        width="100%"
-                        height="100%"
-                        minWidth={0}
-                      >
-                        <AreaChart
-                          data={trend}
-                          margin={{
-                            top: 12,
-                            right: 14,
-                            left: -24,
-                            bottom: 0,
-                          }}
-                          accessibilityLayer
-                        >
-                          <CartesianGrid vertical={false} stroke="var(--border)" />
-                          <XAxis
-                            dataKey="date"
-                            tickFormatter={(v) => `${String(v).slice(5)}週`}
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fill: "var(--muted)", fontSize: 11 }}
-                          />
-                          <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fill: "var(--muted)", fontSize: 11 }}
-                          />
-                          <Tooltip
-                            formatter={(value) => `${value}分`}
-                            labelFormatter={(label) => `${label} からの週`}
-                            contentStyle={{ borderRadius: 6, fontSize: 12 }}
-                          />
-                          <Area
-                            type="linear"
-                            isAnimationActive={false}
-                            dataKey="minutes"
-                            name="学習時間"
-                            stroke="var(--trend-line, var(--accent))"
-                            strokeWidth={2.5}
-                            fill="var(--trend-fill, var(--selected))"
-                            dot={{
-                              r: 4,
-                              fill: "var(--trend-line, var(--accent))",
-                              strokeWidth: 3,
-                              stroke: "white",
-                            }}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <details className="data-details">
-                      <summary>週別の数値を表で見る</summary>
-                      <table>
-                        <caption className="sr-only">週別合計</caption>
-                        <thead>
-                          <tr>
-                            <th>週の開始日</th>
-                            <th>合計</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {trend.map((w) => (
-                            <tr key={w.date}>
-                              <td>{w.date}</td>
-                              <td>
-                                {w.recorded
-                                  ? minutesLabel(w.minutes)
-                                  : "未記録"}
+                                    <ExternalLink size={15} />
+                                  </a>
+                                ) : (
+                                  <span className="sample-label">架空</span>
+                                )}
                               </td>
                             </tr>
                           ))}
-                        </tbody>
-                      </table>
-                    </details>
-                  </section>
-                </>
-              ) : !loading && error ? (
-                <div className="empty-state">
-                  <h3>データを取得できませんでした</h3>
-                  <p>接続設定を確認し、更新ボタンから再試行してください。</p>
-                </div>
-              ) : null}
-              {mode === "demo" && (
-                <details className="demo-tools">
-                  <summary>デモの表示状態を確認</summary>
-                  <label>
-                    表示状態
-                    <select
-                      aria-label="デモの表示状態"
-                      value={scenario}
-                      onChange={(e) => {
-                        setScenario(e.target.value);
-                        setPage(1);
-                      }}
+                      </tbody>
+                    </table>
+                  </div>
+                  {summary.records.length === 0 && (
+                    <p className="empty-records">
+                      この条件の記録はありません。
+                    </p>
+                  )}
+                  <div className="pagination">
+                    <span>
+                      {summary.records.length}件中{" "}
+                      {summary.records.length
+                        ? `${(page - 1) * 15 + 1}〜${Math.min(page * 15, summary.records.length)}件`
+                        : "0件"}
+                    </span>
+                    <div>
+                      <button
+                        aria-label="前のページ"
+                        disabled={page <= 1}
+                        onClick={() => setPage(page - 1)}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span>
+                        {page} /{" "}
+                        {Math.max(1, Math.ceil(summary.records.length / 15))}
+                      </span>
+                      <button
+                        aria-label="次のページ"
+                        disabled={page * 15 >= summary.records.length}
+                        onClick={() => setPage(page + 1)}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+                <MaterialRanking
+                  records={baseRecords}
+                  range={range}
+                  subject={subject}
+                  onSelect={(value) => {
+                    setMaterial(value);
+                    setPage(1);
+                    document.getElementById("overview")?.focus();
+                  }}
+                />
+                <StudyCalendar
+                  records={records}
+                  month={calendarMonth || today.slice(0, 7)}
+                  onMonth={setCalendarMonth}
+                  subject={subject}
+                  today={today}
+                  selectedDate={
+                    range.start === range.end ? range.start : undefined
+                  }
+                  onDay={(date) => {
+                    setCustom({ start: date, end: date });
+                    setPeriod("custom");
+                    setPage(1);
+                    requestAnimationFrame(() =>
+                      document.getElementById("study-report")?.focus(),
+                    );
+                  }}
+                />
+                <section
+                  id="weekly"
+                  tabIndex={-1}
+                  className="panel weekly-panel"
+                >
+                  <div className="panel-heading">
+                    <div>
+                      <h3>Weekly Trend</h3>
+                      <p>直近8週間 · 今週は今日まで</p>
+                    </div>
+                    <span className="unit-tag">単位：分</span>
+                  </div>
+                  <div className="weekly-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      minWidth={0}
                     >
-                      <option value="normal">通常</option>
-                      <option value="empty">未記録</option>
-                      <option value="error">
-                        同期エラー（前回データあり）
-                      </option>
-                      <option value="issues">不正データの警告</option>
-                    </select>
-                  </label>
-                  <small>この操作は架空データの表示だけを変更します。</small>
-                </details>
-              )}
-            </>
-          )}
-          <footer>
-            <span>
-              <BookOpen size={14} />
-              Winkle Study
-            </span>
-            <span>
-              学習記録はNotionに保存 <span className="footer-dot">·</span>{" "}
-              {mode === "demo" ? "デモ" : "個人用"}
-            </span>
-          </footer>
-        </main>
-      </div>
+                      <AreaChart
+                        data={trend}
+                        margin={{
+                          top: 12,
+                          right: 14,
+                          left: -24,
+                          bottom: 0,
+                        }}
+                        accessibilityLayer
+                      >
+                        <CartesianGrid
+                          vertical={false}
+                          stroke="var(--border)"
+                        />
+                        <XAxis
+                          dataKey="date"
+                          tickFormatter={(v) => `${String(v).slice(5)}週`}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "var(--muted)", fontSize: 11 }}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "var(--muted)", fontSize: 11 }}
+                        />
+                        <Tooltip
+                          formatter={(value) => `${value}分`}
+                          labelFormatter={(label) => `${label} からの週`}
+                          contentStyle={{ borderRadius: 6, fontSize: 12 }}
+                        />
+                        <Area
+                          type="linear"
+                          isAnimationActive={false}
+                          dataKey="minutes"
+                          name="学習時間"
+                          stroke="var(--trend-line, var(--accent))"
+                          strokeWidth={2.5}
+                          fill="var(--trend-fill, var(--selected))"
+                          dot={{
+                            r: 4,
+                            fill: "var(--trend-line, var(--accent))",
+                            strokeWidth: 3,
+                            stroke: "white",
+                          }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <details className="data-details">
+                    <summary>週別の数値を表で見る</summary>
+                    <table>
+                      <caption className="sr-only">週別合計</caption>
+                      <thead>
+                        <tr>
+                          <th>週の開始日</th>
+                          <th>合計</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trend.map((w) => (
+                          <tr key={w.date}>
+                            <td>{w.date}</td>
+                            <td>
+                              {w.recorded ? minutesLabel(w.minutes) : "未記録"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </details>
+                </section>
+              </>
+            ) : !loading && error ? (
+              <div className="empty-state">
+                <h3>データを取得できませんでした</h3>
+                <p>接続設定を確認し、更新ボタンから再試行してください。</p>
+              </div>
+            ) : null}
+            {mode === "demo" && (
+              <details className="demo-tools">
+                <summary>デモの表示状態を確認</summary>
+                <label>
+                  表示状態
+                  <select
+                    aria-label="デモの表示状態"
+                    value={scenario}
+                    onChange={(e) => {
+                      setScenario(e.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="normal">通常</option>
+                    <option value="empty">未記録</option>
+                    <option value="error">同期エラー（前回データあり）</option>
+                    <option value="issues">不正データの警告</option>
+                  </select>
+                </label>
+                <small>この操作は架空データの表示だけを変更します。</small>
+              </details>
+            )}
+          </>
+        )}
+        <footer>
+          <span>
+            <BookOpen size={14} />
+            Winkle Study
+          </span>
+          <span>
+            学習記録はNotionに保存 <span className="footer-dot">·</span>{" "}
+            {mode === "demo" ? "デモ" : "個人用"}
+          </span>
+        </footer>
+      </main>
     </div>
   );
 }

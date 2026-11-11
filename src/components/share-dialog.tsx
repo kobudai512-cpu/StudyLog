@@ -72,7 +72,6 @@ export default function ShareDialog({ demo = false }: { demo?: boolean }) {
         <div className="record-dialog-heading">
           <div>
             <h2 id="share-dialog-title">閲覧専用リンク</h2>
-            <p>友達や家族に、学びの積み重ねをシェア。</p>
           </div>
           <button
             className="dialog-close"
