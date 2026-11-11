@@ -46,7 +46,7 @@ public class StudyWidget extends AppWidgetProvider {
    v.setTextViewText(R.id.time,time);v.setTextViewText(R.id.goal,goal);v.setTextViewText(R.id.status,status);
    v.setViewVisibility(R.id.status,status.isEmpty()?View.GONE:View.VISIBLE);
    v.setViewVisibility(R.id.progress,hasGoal?View.VISIBLE:View.INVISIBLE);v.setProgressBar(R.id.progress,100,progress,false);
-   Intent open=paired?new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(SITE)):new Intent(c,MainActivity.class);
+   Intent open=paired?new Intent(c,com.google.androidbrowserhelper.trusted.LauncherActivity.class).setData(android.net.Uri.parse(SITE)):new Intent(c,MainActivity.class);
    v.setOnClickPendingIntent(R.id.root,PendingIntent.getActivity(c,paired?1:2,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
    v.setOnClickPendingIntent(R.id.refresh,PendingIntent.getBroadcast(c,3,new Intent(c,StudyWidget.class).setAction(REFRESH),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE));
    return v;

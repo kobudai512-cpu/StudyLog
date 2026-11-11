@@ -34,6 +34,7 @@ export function demoSnapshot(now = new Date()): Snapshot {
               ][s],
         unit: ["第3章", "演習ノート", "基礎の確認"][j],
         title: titles[s],
+        memo: j === 0 ? "次回は間違えた問題から復習する。" : undefined,
         durationMinutes: duration,
         ...(j === 0 || i % 2 === 0
           ? {

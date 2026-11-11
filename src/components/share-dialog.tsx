@@ -90,9 +90,9 @@ export default function ShareDialog({ demo = false }: { demo?: boolean }) {
         )}
         <div className="share-scope">
           <strong>共有するもの</strong>
-          <p>学習時間・教科別の内訳・カレンダー・週の目標と達成率</p>
+          <p>各記録の日付・教科・学習時間・勉強内容・教材名・単元・メモ、教科別の内訳・カレンダー・週の目標・達成率・目標メモ</p>
           <strong>自分だけに残すもの</strong>
-          <p>勉強内容・教材名・単元・メモ・Notionへのリンク</p>
+          <p>Notionへのリンク</p>
         </div>
         <p className="goal-form-note">
           リンクを知っている人はログインなしで閲覧できます。転送された相手も見られます。記録や目標の変更はできません。

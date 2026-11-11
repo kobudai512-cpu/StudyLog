@@ -102,11 +102,18 @@ export default function SharedDashboard({
   const week =
     data && today ? aggregate(records, { start, end }, subject) : null;
   const allWeek = data && today ? aggregate(records, { start, end }) : null;
-  const target = data?.goals.find((g) => g.weekStart === start)?.targetMinutes;
+  const goal = data?.goals.find((g) => g.weekStart === start);
+  const target = goal?.targetMinutes;
   const daily =
     selectedDay && data
       ? aggregate(records, { start: selectedDay, end: selectedDay }, subject)
       : null;
+  const entries = (data?.records ?? []).filter(
+    (r) =>
+      r.date >= start &&
+      r.date <= end &&
+      (subject === "all" || r.subject === subject),
+  );
   const percent = target && allWeek ? (allWeek.total / target) * 100 : null;
   return (
     <div className="shared-shell">
@@ -130,13 +137,13 @@ export default function SharedDashboard({
       </header>
       <main>
         <h1>学習レポート</h1>
-        <p className="intro">共有された学習時間と週の目標を確認できます。</p>
+        <p className="intro">個別の勉強ログと週の目標を確認できます。</p>
         <div className="shared-notice">
           <Leaf size={18} />
           <span>
             {sample
               ? "デモの共有ページです。実際の学習データではありません。"
-              : "共有された学習サマリーです。勉強内容やメモは表示されず、記録・目標の変更もできません。"}
+              : "学習記録は閲覧専用です。"}
           </span>
         </div>
         {error && (
@@ -234,6 +241,9 @@ export default function SharedDashboard({
                 </div>
               </div>
               <div className="goal-body">
+                {goal?.memo && (
+                  <p className="shared-memo">目標メモ：{goal.memo}</p>
+                )}
                 {target && percent !== null ? (
                   <div className="goal-result">
                     <div>
@@ -273,7 +283,7 @@ export default function SharedDashboard({
                       margin={{ left: -15, right: 12 }}
                       accessibilityLayer
                     >
-                      <CartesianGrid vertical={false} stroke="#edf0ed" />
+                      <CartesianGrid vertical={false} stroke="var(--border)" />
                       <XAxis
                         dataKey="label"
                         axisLine={false}
@@ -324,6 +334,34 @@ export default function SharedDashboard({
                 </div>
               </section>
             </div>
+            <section className="panel shared-day" aria-label="個別の勉強ログ">
+              <h3>個別の勉強ログ</h3>
+              {entries.length ? (
+                <ul className="shared-log-list">
+                  {entries.map((entry, index) => (
+                    <li key={index}>
+                      <small>
+                        {entry.date} · {entry.subject} ·{" "}
+                        {minutesLabel(entry.durationMinutes)}
+                      </small>
+                      <strong>{entry.title || "学習記録"}</strong>
+                      {(entry.material || entry.unit) && (
+                        <span>
+                          {[entry.material, entry.unit]
+                            .filter(Boolean)
+                            .join(" ／ ")}
+                        </span>
+                      )}
+                      {entry.memo && (
+                        <span className="shared-memo">メモ：{entry.memo}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>この週の表示条件に合う記録はありません。</p>
+              )}
+            </section>
             <StudyCalendar
               records={records}
               month={month || today.slice(0, 7)}

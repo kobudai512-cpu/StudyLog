@@ -728,25 +728,25 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                             >
                               <CartesianGrid
                                 vertical={false}
-                                stroke="#edf0ed"
+                                stroke="var(--border)"
                               />
                               <XAxis
                                 dataKey="label"
                                 tickLine={false}
                                 axisLine={false}
-                                tick={{ fill: "#626b78", fontSize: 11 }}
+                                tick={{ fill: "var(--muted)", fontSize: 11 }}
                                 minTickGap={22}
                               />
                               <YAxis
                                 tickLine={false}
                                 axisLine={false}
-                                tick={{ fill: "#626b78", fontSize: 11 }}
+                                tick={{ fill: "var(--muted)", fontSize: 11 }}
                               />
                               <Tooltip
-                                cursor={{ fill: "#f3f6f3" }}
+                                cursor={{ fill: "var(--subtle)" }}
                                 formatter={(value) => `${value}分`}
                                 contentStyle={{
-                                  border: "1px solid #e5eae5",
+                                  border: "1px solid var(--border)",
                                   borderRadius: 6,
                                   fontSize: 12,
                                 }}
@@ -1083,18 +1083,18 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                           }}
                           accessibilityLayer
                         >
-                          <CartesianGrid vertical={false} stroke="#edf0ed" />
+                          <CartesianGrid vertical={false} stroke="var(--border)" />
                           <XAxis
                             dataKey="date"
                             tickFormatter={(v) => `${String(v).slice(5)}週`}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: "#626b78", fontSize: 11 }}
+                            tick={{ fill: "var(--muted)", fontSize: 11 }}
                           />
                           <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: "#626b78", fontSize: 11 }}
+                            tick={{ fill: "var(--muted)", fontSize: 11 }}
                           />
                           <Tooltip
                             formatter={(value) => `${value}分`}
@@ -1106,12 +1106,12 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                             isAnimationActive={false}
                             dataKey="minutes"
                             name="学習時間"
-                            stroke="#315da8"
+                            stroke="var(--accent)"
                             strokeWidth={2.5}
-                            fill="#eef2f8"
+                            fill="var(--selected)"
                             dot={{
                               r: 4,
-                              fill: "#315da8",
+                              fill: "var(--accent)",
                               strokeWidth: 3,
                               stroke: "white",
                             }}

@@ -10,7 +10,7 @@ public class MainActivity extends Activity {
  int dp(int x){return Math.round(x*getResources().getDisplayMetrics().density);}
  TextView text(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(getColor(R.color.ink));t.setPadding(0,dp(8),0,dp(8));return t;}
  Button flatButton(){Button button=new Button(this);button.setStateListAnimator(null);return button;}
- void browser(String path){startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(StudyWidget.SITE+path)));}
+ void browser(String path){startActivity(new Intent(this,com.google.androidbrowserhelper.trusted.LauncherActivity.class).setData(android.net.Uri.parse(StudyWidget.SITE+path)));}
  static boolean opensWebsite(Intent intent){return Intent.ACTION_MAIN.equals(intent.getAction()) && intent.hasCategory(Intent.CATEGORY_LAUNCHER);}
  @Override public void onCreate(Bundle saved){
   super.onCreate(saved);

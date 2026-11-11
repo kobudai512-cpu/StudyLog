@@ -12,11 +12,13 @@ export const FIELDS = {
   subject: { name: "科目", type: "select" },
   duration: { name: "学習時間（分）", type: "number" },
   material: { name: "教材", type: "select" },
+  memo: { name: "メモ", type: "rich_text" },
   unit: { name: "単元", type: "rich_text" },
 } as const;
 export type Field = keyof typeof FIELDS;
-export type Bindings = Record<Exclude<Field, "material">, string> & {
+export type Bindings = Record<Exclude<Field, "material" | "memo">, string> & {
   material?: string;
+  memo?: string;
 };
 export type SchemaProperty = { id: string; name: string; type: string };
 export function resolveBindings(
@@ -31,6 +33,8 @@ export function resolveBindings(
       const property = id
         ? entries.find((p) => p.id === id)
         : entries.find((p) => p.name === field.name);
+      if (key === "memo" && property?.type !== field.type && !overrides?.memo)
+        return [];
       if (key === "material" && !property && !overrides?.material) return [];
       if (key === "unit" && !property && !overrides?.unit) return [[key, ""]];
       if (!property || property.type !== field.type)
@@ -83,7 +87,7 @@ export function normalizePages(
       Object.values(page.properties).find((p) => p.id === bindings[field]);
     const invalidType = (Object.keys(FIELDS) as Field[]).find(
       (f) =>
-        !((f === "unit" || f === "material") && !bindings[f]) &&
+        !((f === "unit" || f === "material" || f === "memo") && !bindings[f]) &&
         get(f)?.type !== FIELDS[f].type,
     );
     if (invalidType) {
@@ -128,6 +132,9 @@ export function normalizePages(
       ...(bindings.material
         ? { material: get("material")?.select?.name?.trim() || "" }
         : {}),
+      memo: get("memo")
+        ?.rich_text?.map((t) => t.plain_text)
+        .join(""),
       unit: get("unit")
         ?.rich_text?.map((t) => t.plain_text)
         .join(""),

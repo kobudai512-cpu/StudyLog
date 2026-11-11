@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.winkle.study",
+      "sha256_cert_fingerprints": [
+        "80:60:C5:B5:C1:6B:1F:ED:4C:F2:67:B6:E3:6C:F8:5B:98:17:2F:96:8F:AF:72:63:74:81:B1:DA:33:7A:96:49"
+      ]
+    }
+  }
+]

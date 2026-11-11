@@ -66,8 +66,9 @@ it("日付またぎを日別・教科別に集計し、秘密の項目や実ペ�
         id: "private-page",
         date: "2026-10-24",
         subject: "数学",
-        title: "PRIVATE_TITLE",
-        unit: "PRIVATE_UNIT",
+        title: "Study title",
+        unit: "Study unit",
+        memo: "Record memo",
         notionUrl: "https://notion.so/private",
         updatedAt: "PRIVATE_UPDATED",
         durationMinutes: 90,
@@ -81,22 +82,33 @@ it("日付またぎを日別・教科別に集計し、秘密の項目や実ペ�
         id: "PRIVATE_GOAL",
         weekStart: "2026-10-19",
         targetMinutes: 600,
-        memo: "PRIVATE_MEMO",
+        memo: "Goal memo",
         notionUrl: "https://notion.so/secret",
       },
     ],
   };
   const shared = toSharedStudy(response);
+  expect(shared.records).toEqual([
+    {
+      date: "2026-10-24",
+      subject: "数学",
+      durationMinutes: 90,
+      title: "Study title",
+      unit: "Study unit",
+      memo: "Record memo",
+    },
+  ]);
   expect(shared.days).toEqual([
     { date: "2026-10-23", subject: "数学", minutes: 60 },
     { date: "2026-10-24", subject: "数学", minutes: 30 },
   ]);
   expect(shared.goals).toEqual([
-    { weekStart: "2026-10-19", targetMinutes: 600 },
+    { weekStart: "2026-10-19", targetMinutes: 600, memo: "Goal memo" },
   ]);
   expect(Object.keys(shared).sort()).toEqual([
     "days",
     "goals",
+    "records",
     "stale",
     "syncedAt",
   ]);

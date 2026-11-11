@@ -81,7 +81,7 @@ it("日付をまたいだ教材の記録は期間内の分数・日数を正し�
     issues: [],
     duplicates: 0,
   });
-  expect(JSON.stringify(shared)).not.toContain("教材");
+  expect(shared.records[0].material).toBe("教材");
 });
 it("教材の保存入力を検証し、既存の教材なし入力との互換性を保つ", () => {
   const input = {

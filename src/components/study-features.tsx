@@ -248,18 +248,18 @@ export function HourlyChart({
             margin={{ top: 15, right: 6, bottom: 0, left: -24 }}
             accessibilityLayer
           >
-            <CartesianGrid vertical={false} stroke="#edf0ed" />
+            <CartesianGrid vertical={false} stroke="var(--border)" />
             <XAxis
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              tick={{ fill: "#626b78", fontSize: 11 }}
+              tick={{ fill: "var(--muted)", fontSize: 11 }}
               minTickGap={18}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fill: "#626b78", fontSize: 11 }}
+              tick={{ fill: "var(--muted)", fontSize: 11 }}
             />
             <Tooltip
               formatter={(value) => `${Number(Number(value).toFixed(1))}分`}

@@ -7,19 +7,21 @@ import {
   type RawPage,
 } from "@/lib/notion-schema";
 import { queryAll, retryingFetch } from "@/lib/notion";
-const bindings: Bindings & { material: string } = {
+const bindings: Bindings & { material: string; memo: string } = {
   title: "t",
   date: "d",
   subject: "s",
   duration: "m",
   unit: "u",
   material: "b",
+  memo: "note",
 };
 const makePage = (): RawPage => ({
   id: "one",
   url: "https://app.notion.com/p/one",
   last_edited_time: "2026-10-22T00:00:00Z",
   properties: {
+    memo: { id: "note", type: "rich_text", rich_text: [{ plain_text: "復習" }] },
     renamedTitle: { id: "t", type: "title", title: [{ plain_text: "微分" }] },
     renamedDate: { id: "d", type: "date", date: { start: "2026-10-22" } },
     renamedSubject: { id: "s", type: "select", select: { name: "数学" } },

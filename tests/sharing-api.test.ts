@@ -74,6 +74,7 @@ it("共有リンクだけで要約を読めるが、同期中に停止したら�
   expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   expect(await response.json()).toEqual({
     days: [],
+    records: [],
     goals: [],
     syncedAt: "2026-10-24T00:00:00Z",
     stale: false,
