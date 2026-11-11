@@ -121,14 +121,6 @@ export function WeeklyGoal({
             </a>
           )}
         </div>
-        <details className="goal-sync-help">
-          <summary>Notionの目標が反映されないときは</summary>
-          <p>
-            {data.mode === "demo"
-              ? "この画面はデモのため、Notionの変更は反映されません。本番画面でログインしてください。"
-              : "Notionで直接変更した目標は、最大5分後の自動取得か「更新」ボタンで読み込みます。週の開始日は表示中の週の月曜日を指定し、同じ週の目標は1件にしてください。"}
-          </p>
-        </details>
       </div>
     </section>
   );

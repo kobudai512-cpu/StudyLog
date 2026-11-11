@@ -467,10 +467,10 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
             <div className="sync-line">
               <span>
                 {loading
-                  ? "学習記録を取得しています…"
+                  ? "Syncing…"
                   : data
-                    ? `最終${mode === "demo" ? "デモ更新" : "成功同期"}：${new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Tokyo" }).format(new Date(data.syncedAt))}`
-                    : "未同期"}
+                    ? `Synced ${new Intl.DateTimeFormat("en-GB", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(new Date(data.syncedAt))}`
+                    : "Not synced"}
               </span>
               <span>月曜始まり · Asia/Tokyo</span>
             </div>
@@ -545,12 +545,6 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                       <span>日</span>
                       <small>/ {displayedWeek.current.calendarDays}日</small>
                     </div>
-                    <div className="stat-foot">
-                      {isPastWeek
-                        ? "月曜日から日曜日まで"
-                        : "月曜日から今日まで"}{" "}
-                      · 未記録日は含めません
-                    </div>
                   </article>
                   <article className="stat-card">
                     <div className="stat-label">
@@ -579,13 +573,6 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                           {Math.round(displayedWeek.percent)}%
                         </em>
                       )}
-                    </div>
-                    <div className="stat-foot">
-                      比較：{displayedWeek.previous.start.slice(5)} ～{" "}
-                      {displayedWeek.previous.end.slice(5)}
-                      {displayedWeek.percent === null
-                        ? "（前週0分・増加率なし）"
-                        : ""}
                     </div>
                   </article>
                 </section>
