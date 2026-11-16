@@ -229,7 +229,7 @@ export function HourlyChart({
       <div className="panel-heading">
         <div>
           <h3>時間帯別の学習時間</h3>
-          <p>{date} · 1時間ごと（推定）</p>
+          <p>{date} · 1時間ごと</p>
         </div>
         <span className="unit-tag">単位：分</span>
       </div>

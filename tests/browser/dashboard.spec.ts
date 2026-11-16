@@ -141,7 +141,7 @@ test("未認証アクセスは実データを返さない", async ({ request, pa
   await expect(page.locator(".record-table")).toHaveCount(0);
 });
 
-test("記録ポップアップ・推定プレビュー・デモ保存・閉じる操作", async ({
+test("記録ポップアップ・デモ保存・閉じる操作", async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -163,8 +163,6 @@ test("記録ポップアップ・推定プレビュー・デモ保存・閉じ�
     .fill("2026-10-22T02:31");
   await dialog.getByLabel("実績時間（時間）", { exact: true }).fill("1");
   await dialog.getByLabel("実績時間（分）", { exact: true }).fill("31");
-  await expect(dialog.locator(".record-preview")).toContainText("01:00");
-  await expect(dialog.locator(".record-preview")).toContainText("02:31");
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
   await page.getByRole("button", { name: "記録する", exact: true }).click();

@@ -76,15 +76,6 @@ export default function RecordDialog({
       setLoading(false);
     }
   }
-  const end = Date.parse(`${endedAt}+09:00`);
-  const start = end - Number(duration) * 60000;
-  const preview =
-    endedAt &&
-    Number(duration) > 0 &&
-    Number(duration) <= 1440 &&
-    Number.isFinite(start)
-      ? `${new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(start))} 〜 ${new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(end))}`
-      : "終了日時と実績時間を入力すると表示します";
   return (
     <>
       <button
@@ -106,11 +97,9 @@ export default function RecordDialog({
         <div className="record-dialog-heading">
           <div>
             <h2 id="record-dialog-title">勉強を記録する</h2>
-            <p>
-              {mode === "demo"
-                ? "デモ：架空データへの追加です。Notionには保存しません。"
-                : "Study Logに新しい記録を保存します。"}
-            </p>
+            {mode === "demo" && (
+              <p>デモ：架空データへの追加です。Notionには保存しません。</p>
+            )}
           </div>
           <button
             type="button"
@@ -315,9 +304,6 @@ export default function RecordDialog({
                       <option key={name} value={name} />
                     ))}
                   </datalist>
-                  <small>
-                    新しい教材名も、記録と一緒にNotionの選択肢へ保存します。
-                  </small>
                 </label>
               )}
               {options?.hasUnit && (
@@ -331,13 +317,7 @@ export default function RecordDialog({
                 </label>
               )}
             </fieldset>
-            <div className="record-preview">
-              <strong>推定した学習時間帯</strong>
-              <p>{preview}</p>
-              <small>
-                終了時刻から実績分だけ逆算します。休憩は判別できません。
-              </small>
-            </div>
+
             {error && (
               <p className="notice error" role="alert">
                 {error}
