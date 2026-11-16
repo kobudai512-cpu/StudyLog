@@ -45,8 +45,8 @@ export default function RecordDialog({
   );
   async function open() {
     dialog.current?.showModal();
-    if (!endedAt) setEndedAt(tokyoDateTimeInput());
-    if (uncertain || saved) return;
+    if (uncertain || saved || sending.current) return;
+    setEndedAt(tokyoDateTimeInput());
     setLoading(true);
     setError("");
     try {
