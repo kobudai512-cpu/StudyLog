@@ -1262,6 +1262,7 @@ footer > span:first-child {
   color: var(--muted);
 }
 .record-dialog-actions {
+  margin-top: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;

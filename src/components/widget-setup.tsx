@@ -59,6 +59,7 @@ export default function WidgetSetup({
         </span>
         <strong>12h 40m</strong>
         <span>/ 15h</span>
+        <span>TODAY 1h 20m</span>
         <div className="widget-preview-track">
           <i />
         </div>
@@ -77,7 +78,7 @@ export default function WidgetSetup({
           Androidアプリをダウンロード
         </a>
         <p className="widget-note">
-          バージョン 1.3.0 · このサイトから配布する専用アプリです。
+          バージョン 1.4.0 · このサイトから配布する専用アプリです。
         </p>
       </section>
       <section>

@@ -32,6 +32,8 @@ public class StudyWidget extends AppWidgetProvider {
    String time="—",goal=paired?"Syncing…":"Tap to connect",status=Storage.prefs(c).getString("error","").isEmpty()?"":"Offline"; int progress=0;boolean hasGoal=false;
    try{
     JSONObject data=new JSONObject(Storage.prefs(c).getString("summary","{}"));
+    String today=LocalDate.now(ZoneId.of("Asia/Tokyo")).toString();
+    v.setTextViewText(R.id.today,"TODAY "+(today.equals(data.optString("today")) && data.has("todayMinutes") ? duration(data.getInt("todayMinutes")) : "—"));
     if(week().equals(data.optString("weekStart"))){
      int minutes=data.getInt("minutes");time=duration(minutes);int target=data.optInt("targetMinutes",0);hasGoal=target>0;
      progress=hasGoal?(int)Math.min(100,Math.round(minutes*100.0/target)):0;

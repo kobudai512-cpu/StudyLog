@@ -70,6 +70,8 @@ it("splits Sunday midnight records at the Tokyo week boundary without exposing p
   };
   const result = widgetSummary(study, new Date("2026-11-08T15:30:00Z"));
   expect(result).toEqual({
+    today: "2026-11-09",
+    todayMinutes: 30,
     weekStart: "2026-11-09",
     weekEnd: "2026-11-15",
     minutes: 30,

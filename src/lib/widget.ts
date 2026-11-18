@@ -47,6 +47,12 @@ export function widgetSummary(study: StudyResponse, now = new Date()) {
     (g) => g.weekStart === weekStart,
   )?.targetMinutes;
   return {
+    today: tokyoDate(now),
+    todayMinutes: Math.round(
+      data.days
+        .filter((d) => d.date === tokyoDate(now))
+        .reduce((sum, d) => sum + d.minutes, 0),
+    ),
     weekStart,
     weekEnd,
     minutes: Math.round(minutes),

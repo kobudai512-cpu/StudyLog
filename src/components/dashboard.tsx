@@ -44,7 +44,6 @@ import {
   periodRange,
   subjectColor,
   tokyoDate,
-  weekComparison,
   type Period,
   type StudyResponse,
 } from "@/lib/study";
@@ -170,21 +169,10 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
           : b.date.localeCompare(a.date) ||
             b.updatedAt.localeCompare(a.updatedAt),
   );
-  const week = useMemo(
-    () => (today ? weekComparison(records, today, subject) : null),
-    [records, today, subject],
-  );
-  const selectedWeek = useMemo(
-    () =>
-      today
-        ? weekComparison(records, shiftedWeek(today, weekOffset).end, subject)
-        : null,
-    [records, today, weekOffset, subject],
-  );
   const goalWeekStart = today
     ? period === "week"
       ? shiftedWeek(today, weekOffset).start
-      : periodRange("week", range.start).start
+      : periodRange("week", today).start
     : "";
   const allWeek = useMemo(
     () =>
@@ -199,7 +187,55 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
         : null,
     [baseRecords, today, goalWeekStart],
   );
-  const displayedWeek = period === "week" ? selectedWeek : week;
+  let previousRange = { start: "", end: "" };
+  if (today && summary) {
+    const shift = period === "week" ? 7 : summary.calendarDays;
+    previousRange = {
+      start: addDays(range.start, -shift),
+      end: addDays(range.end, -shift),
+    };
+    if (period === "month") {
+      const lastMonthEnd = addDays(range.start, -1);
+      previousRange = {
+        start: lastMonthEnd.slice(0, 7) + "-01",
+        end:
+          lastMonthEnd.slice(0, 7) +
+          "-" +
+          String(
+            Math.min(Number(range.end.slice(8)), Number(lastMonthEnd.slice(8))),
+          ).padStart(2, "0"),
+      };
+    }
+  }
+  const priorTotal =
+    today && summary ? aggregate(records, previousRange, subject).total : 0;
+  const displayedWeek = summary
+    ? {
+        current: summary,
+        difference: summary.total - priorTotal,
+        percent: priorTotal
+          ? ((summary.total - priorTotal) / priorTotal) * 100
+          : null,
+      }
+    : null;
+  const periodLabel =
+    period === "today"
+      ? "今日"
+      : period === "month"
+        ? "今月"
+        : period === "custom"
+          ? "期間内"
+          : weekOffset < 0
+            ? "表示週"
+            : "今週";
+  const comparisonLabel =
+    period === "today"
+      ? "昨日との差"
+      : period === "month"
+        ? "先月の同期間との差"
+        : period === "custom"
+          ? "直前の同日数との差"
+          : "前週の同期間との差";
   const isPastWeek = period === "week" && weekOffset < 0;
   const trend = useMemo(
     () =>
@@ -509,12 +545,10 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
               </div>
             ) : summary && displayedWeek && allWeek && data ? (
               <>
-                <section className="stats-grid" aria-label="週のサマリー">
+                <section className="stats-grid" aria-label="期間のサマリー">
                   <article className="stat-card featured">
                     <div className="stat-label">
-                      <span>
-                        {isPastWeek ? "表示週の学習時間" : "今週の学習時間"}
-                      </span>
+                      <span>{periodLabel}の学習時間</span>
                       <span className="stat-icon">
                         <Clock3 size={18} />
                       </span>
@@ -533,9 +567,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   </article>
                   <article className="stat-card">
                     <div className="stat-label">
-                      <span>
-                        {isPastWeek ? "表示週の記録日数" : "今週の記録日数"}
-                      </span>
+                      <span>{periodLabel}の記録日数</span>
                       <span className="stat-icon">
                         <CalendarDays size={18} />
                       </span>
@@ -548,7 +580,7 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                   </article>
                   <article className="stat-card">
                     <div className="stat-label">
-                      <span>前週の同期間との差</span>
+                      <span>{comparisonLabel}</span>
                       <span className="stat-icon">
                         {displayedWeek.difference >= 0 ? (
                           <ArrowUpRight size={18} />
@@ -576,26 +608,28 @@ export default function Dashboard({ mode, authenticated, authReady }: Props) {
                     </div>
                   </article>
                 </section>
-                <WeeklyGoal
-                  total={allWeek.total}
-                  data={data}
-                  weekStart={goalWeekStart}
-                  onSaved={(goal) => {
-                    setData((current) =>
-                      current
-                        ? {
-                            ...current,
-                            goals: [
-                              ...(current.goals ?? []).filter(
-                                (g) => g.weekStart !== goal.weekStart,
-                              ),
-                              goal,
-                            ],
-                          }
-                        : current,
-                    );
-                  }}
-                />
+                {(period === "today" || period === "week") && (
+                  <WeeklyGoal
+                    total={allWeek.total}
+                    data={data}
+                    weekStart={goalWeekStart}
+                    onSaved={(goal) => {
+                      setData((current) =>
+                        current
+                          ? {
+                              ...current,
+                              goals: [
+                                ...(current.goals ?? []).filter(
+                                  (g) => g.weekStart !== goal.weekStart,
+                                ),
+                                goal,
+                              ],
+                            }
+                          : current,
+                      );
+                    }}
+                  />
+                )}
                 <div
                   className="section-heading"
                   id="study-report"
